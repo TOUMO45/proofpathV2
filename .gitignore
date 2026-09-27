@@ -1,0 +1,18 @@
+# Personal learning context (Devpost Learn)
+/devpost/learner-profile.md
+
+# Local credentials
+.env
+.env.*
+!.env.example
+
+# Skill pack: .claude/skills are local junctions into .agents/skills; agent/ is a duplicate copy
+/.claude/skills/
+/agent/
+
+# Build output
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
