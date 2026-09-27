@@ -25,8 +25,30 @@ const IRREGULAR: Record<string, string> = {
   visibility: "visible",
 };
 
+// Cyrillic and Greek letters that render like Latin ones ("wоuld" with a
+// Cyrillic о). Mapped to Latin so no screen can be dodged by lookalikes.
+const CONFUSABLES: Record<string, string> = {
+  а: "a", в: "b", е: "e", ё: "e", к: "k", м: "m", н: "h", о: "o", р: "p", с: "c", т: "t", у: "y", х: "x",
+  і: "i", ї: "i", ј: "j", ѕ: "s", ԁ: "d", ԛ: "q", ԝ: "w", ɡ: "g", һ: "h", ӏ: "l",
+  А: "A", В: "B", Е: "E", К: "K", М: "M", Н: "H", О: "O", Р: "P", С: "C", Т: "T", У: "Y", Х: "X", І: "I", Ј: "J", Ѕ: "S",
+  α: "a", ε: "e", ι: "i", κ: "k", ν: "v", ο: "o", ρ: "p", τ: "t", υ: "u", χ: "x",
+  Α: "A", Β: "B", Ε: "E", Ζ: "Z", Η: "H", Ι: "I", Κ: "K", Μ: "M", Ν: "N", Ο: "O", Ρ: "P", Τ: "T", Υ: "Y", Χ: "X",
+};
+const CONFUSABLE_RE = new RegExp(`[${Object.keys(CONFUSABLES).join("")}]`, "g");
+
+/**
+ * Canonical form of any evidence or requirement text. Runs before every screen:
+ * - NFKC folds fullwidth and other compatibility forms ("ｍａｒｋ" → "mark")
+ * - invisible format characters are removed (zero-width space/joiners, soft
+ *   hyphen, bidi controls: "wo​uld" → "would")
+ * - Cyrillic/Greek lookalikes become Latin
+ * - curly quotes become straight quotes, whitespace collapses
+ */
 export function normalize(text: string): string {
   return text
+    .normalize("NFKC")
+    .replace(/\p{Cf}/gu, "")
+    .replace(CONFUSABLE_RE, (c) => CONFUSABLES[c])
     .replace(/[‘’‛]/g, "'")
     .replace(/[“”‟]/g, '"')
     .replace(/\s+/g, " ")
@@ -123,7 +145,7 @@ const LABEL = /\b(input|action|observed)\s*:/gi;
 
 export function parseEvidence(e: Evidence): ParsedEvidence {
   if (e.kind === "structured" && e.structured) {
-    const { input, action, observed } = e.structured;
+    const [input, action, observed] = [e.structured.input, e.structured.action, e.structured.observed].map(normalize);
     const setup = [input, action].filter((s) => s.trim()).join(". ");
     return { setup, observed, all: [setup, observed].filter(Boolean).join(". "), labeled: true };
   }
