@@ -3,6 +3,7 @@
 // Screen switcher: Landing → Workspace. spec.md > File Structure.
 
 import { useEffect, useReducer } from "react";
+import { ContractReview } from "@/components/ContractReview";
 import { CoverageBar } from "@/components/CoverageBar";
 import { EvidenceForm } from "@/components/EvidenceForm";
 import { EvidenceList } from "@/components/EvidenceList";
@@ -11,6 +12,7 @@ import { ProofGapCard } from "@/components/ProofGapCard";
 import { ProofCard } from "@/components/ProofCard";
 import { ProofGraph } from "@/components/ProofGraph";
 import { WorkspaceTopBar } from "@/components/WorkspaceTopBar";
+import { generateContract } from "@/lib/contract/generate";
 import { buildGaps } from "@/lib/gap";
 import { buildProofCard } from "@/lib/proofcard";
 import { hasCurrentVerdicts, initialState, loadSaved, reducer, save } from "@/lib/store";
@@ -42,11 +44,19 @@ export default function Home() {
     return (
       <GoalInput
         onTryDemo={() => dispatch({ type: "loadDemo" })}
+        onCreate={(goal) => {
+          const result = generateContract(goal);
+          if (!result.ok) return result.error;
+          dispatch({ type: "createContract", goal: goal.trim(), requirements: result.requirements });
+          return null;
+        }}
         notice={state.notice}
         onDismissNotice={() => dispatch({ type: "dismissNotice" })}
       />
     );
   }
+
+  if (!session.contract.approved) return <ContractReview session={session} dispatch={dispatch} />;
 
   const current = hasCurrentVerdicts(session);
   const pct = current ? coverage(session.verdicts) : null;
@@ -61,6 +71,7 @@ export default function Home() {
         coverage={pct}
         step={pct === 100 ? "proof" : "evidence"}
         onReset={() => dispatch({ type: "reset" })}
+        onEditContract={() => dispatch({ type: "reopenContract" })}
       />
       <main className="mx-auto grid max-w-6xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0 space-y-6">

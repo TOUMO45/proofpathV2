@@ -1,0 +1,199 @@
+"use client";
+
+// Review and edit the draft contract before any evidence. prd.md > Contract Review.
+// Nothing is auto-approved; a flagged requirement blocks Approve.
+
+import { MAX_REQUIREMENTS } from "@/lib/contract/generate";
+import { checkClean } from "@/lib/contract/clean";
+import { approvalBlocker, evidenceOnlyLinkedTo, type Action } from "@/lib/store";
+import type { ExpectedOutcome, Session } from "@/lib/types";
+
+const EXPECTED: { id: ExpectedOutcome; label: string }[] = [
+  { id: "succeeds", label: "succeeds: it works when used" },
+  { id: "rejects", label: "rejects: bad input is refused" },
+  { id: "displays", label: "displays: something is on screen" },
+  { id: "persists", label: "persists: survives reload/restart" },
+];
+
+const field = "w-full border border-rule bg-paper px-2 py-1.5 focus:border-accent";
+
+export function ContractReview({ session, dispatch }: { session: Session; dispatch: (a: Action) => void }) {
+  const reqs = session.contract.requirements;
+  const blocker = approvalBlocker(session);
+  const reopened = session.evidence.length > 0;
+
+  return (
+    <div className="min-h-screen">
+      <header className="border-b border-rule">
+        <div className="mx-auto flex max-w-4xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
+          <span className="font-semibold tracking-tight">ProofPath</span>
+          <ol className="flex items-center gap-2 text-sm" aria-label="Progress">
+            <li aria-current="step" className="font-semibold text-accent">
+              Contract
+            </li>
+            <li aria-hidden className="text-muted">
+              →
+            </li>
+            <li className="text-muted">Evidence</li>
+            <li aria-hidden className="text-muted">
+              →
+            </li>
+            <li className="text-muted">Proof</li>
+          </ol>
+          <button type="button" onClick={() => dispatch({ type: "reset" })} className="ml-auto text-sm text-muted underline underline-offset-2 hover:text-ink">
+            Start over
+          </button>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-4xl space-y-6 px-4 py-6 sm:px-6">
+        <section>
+          <h1 className="label">Success contract · review before evidence</h1>
+          <p className="mt-2 text-lg">
+            <span className="label mr-2 text-xs">Goal</span>
+            {session.goal}
+          </p>
+          <p className="mt-2 text-sm text-muted">
+            Each requirement is one observable behavior. Edit anything that doesn&apos;t match what you asked for. Target
+            words are what evidence must mention; the expected outcome decides what counts as proof.
+          </p>
+        </section>
+
+        {reqs.length < 3 && (
+          <p role="status" className="border border-notproven bg-sheet p-3 text-sm">
+            <span className="font-mono font-semibold text-notproven">LOW CONFIDENCE</span> Only {reqs.length} requirement
+            {reqs.length === 1 ? "" : "s"} came out of this goal. Add what&apos;s missing, or edit these.
+          </p>
+        )}
+
+        <ol className="space-y-4">
+          {reqs.map((r) => {
+            const suggestion = r.flags.length ? checkClean(r.text).splitSuggestion : undefined;
+            const loses = reopened ? evidenceOnlyLinkedTo(session, r.id) : [];
+            return (
+              <li
+                key={r.id}
+                className={`border bg-sheet p-4 ${r.flags.length ? "border-l-4 border-rule border-l-contradicted" : "border-rule"}`}
+                data-testid={`req-${r.id}`}
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-sm font-semibold">{r.id}</span>
+                  {r.flags.length > 0 && (
+                    <span className="border border-contradicted px-1 font-mono text-[10px] font-semibold tracking-wider text-contradicted">
+                      NEEDS EDIT
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => dispatch({ type: "removeRequirement", id: r.id })}
+                    className="ml-auto text-xs text-muted underline underline-offset-2 hover:text-contradicted"
+                    aria-label={`Remove ${r.id}`}
+                  >
+                    Remove
+                  </button>
+                </div>
+                <label className="mt-2 block">
+                  <span className="sr-only">Requirement {r.id}</span>
+                  <textarea
+                    rows={2}
+                    className={`${field} text-base`}
+                    value={r.text}
+                    placeholder="One observable behavior, e.g. The dark mode toggle persists after page reload"
+                    onChange={(e) => dispatch({ type: "editRequirement", id: r.id, patch: { text: e.target.value } })}
+                  />
+                </label>
+                {r.flags.length > 0 && (
+                  <div className="mt-2 text-sm text-contradicted">
+                    {r.flags.join(" · ")}
+                    {suggestion && reqs.length < MAX_REQUIREMENTS && (
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-ink">
+                        <button
+                          type="button"
+                          onClick={() => dispatch({ type: "splitRequirement", id: r.id })}
+                          className="border border-ink px-2 py-1 text-xs font-medium hover:bg-ink hover:text-paper"
+                        >
+                          Split into 2
+                        </button>
+                        <span className="text-xs text-muted">
+                          → &ldquo;{suggestion[0]}&rdquo; and &ldquo;{suggestion[1]}&rdquo;
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <label className="block text-sm">
+                    <span className="label text-xs">Expected outcome</span>
+                    <select
+                      className={field}
+                      value={r.expected}
+                      onChange={(e) => dispatch({ type: "editRequirement", id: r.id, patch: { expected: e.target.value as ExpectedOutcome } })}
+                    >
+                      {EXPECTED.map((x) => (
+                        <option key={x.id} value={x.id}>
+                          {x.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block text-sm">
+                    <span className="label text-xs">Target words (comma-separated)</span>
+                    <input
+                      className={`${field} font-mono text-[13px]`}
+                      defaultValue={r.targets.join(", ")}
+                      key={r.targets.join(",")}
+                      onBlur={(e) =>
+                        dispatch({
+                          type: "editRequirement",
+                          id: r.id,
+                          patch: { targets: e.target.value.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean) },
+                        })
+                      }
+                    />
+                  </label>
+                </div>
+                <p className="mt-2 text-xs text-muted">
+                  <span className="label mr-1">Proof</span>
+                  {r.proofTemplate}
+                </p>
+                {loses.length > 0 && (
+                  <p className="mt-2 text-xs text-notproven">
+                    Removing {r.id} also removes {loses.map((e) => e.id).join(", ")} (linked only to {r.id}).
+                  </p>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+
+        <div className="flex flex-wrap items-center gap-4">
+          <button
+            type="button"
+            onClick={() => dispatch({ type: "addRequirement" })}
+            disabled={reqs.length >= MAX_REQUIREMENTS}
+            className="border border-ink px-3 py-2 text-sm hover:bg-ink hover:text-paper disabled:border-rule disabled:text-muted disabled:hover:bg-transparent"
+          >
+            Add requirement
+          </button>
+          <span className="text-xs text-muted">
+            {reqs.length} of {MAX_REQUIREMENTS}
+          </span>
+        </div>
+
+        <div className="border-t border-rule pt-6">
+          <button
+            type="button"
+            onClick={() => dispatch({ type: "approveContract" })}
+            disabled={blocker !== null}
+            className="bg-accent px-5 py-3 font-medium text-white hover:bg-accent/90 disabled:bg-rule disabled:text-muted"
+          >
+            Approve contract
+          </button>
+          <p className="mt-2 text-sm text-muted" role="status">
+            {blocker ?? (reopened ? "Approving again keeps your evidence. Verdicts stay stale until you verify." : "Approving unlocks evidence.")}
+          </p>
+        </div>
+      </main>
+    </div>
+  );
+}

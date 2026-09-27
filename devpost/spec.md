@@ -76,8 +76,9 @@ From `prd.md > Look and Feel` and `scope.md > Inspiration & Identity`.
 ## Components
 
 ### Contract Generator (`lib/contract`)
-- Splits a goal into clauses on commas, "and", "that", "after", "without" and similar connectors, and trims trailing punctuation.
+- Splits a goal into sentences (`;`, `.`), then into behaviors at "that/which" (a relative clause on a subject) and at ", " / "and" wherever the next word is a verb. "Name, email and message fields" stays one list. A condition ("after page reload", "without crashing") stays attached to its behavior rather than becoming a requirement of its own. Trailing punctuation is trimmed.
 - Classifies each clause (e.g. visible, rejects, succeeds, shows, persists) and attaches an **expected outcome** (see Decisions) and an "evidence that would prove it" template.
+- Target words skip failure words (crash, error, fail, timeout…), because they describe what must *not* happen: as targets, "no crash" in good evidence would read as a negated target.
 - Returns 0–7 draft requirements (R1…R7). Too-short goals return an error; fewer than 3 triggers the low-confidence warning in the UI.
 
 PRD ref: `prd.md > Goal to Contract`.

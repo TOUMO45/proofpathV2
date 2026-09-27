@@ -78,7 +78,7 @@ Build mode: fast (chosen in `4-spec`: verification and a commit for every slice,
   Learner check: Open the live URL on your phone or another browser and run the demo from start to 100%.
   Commit: `Add CI and GitHub Pages deployment`
 
-- [ ] **5. Your own goal becomes a clean contract you review and approve**
+- [x] **5. Your own goal becomes a clean contract you review and approve**
   Becomes usable: You type a goal and get 3–7 draft requirements, each with its proof template, editable `expected` outcome and target words. Unclean requirements are flagged with a reason and a **Split into 2** suggestion, and flags block **Approve**. Approval unlocks evidence. **Edit contract** reopens it, marking verdicts stale, removing links to deleted requirements and keeping links to edited ones.
   Why now: The demo already proves the loop, so this opens it to real goals. It depends on the verifier (slice 1) and the evidence and Proof Card flow (slice 3).
   PRD ref: `prd.md > Goal to Contract`, `prd.md > Contract Review`, `prd.md > States and Boundaries`
@@ -147,3 +147,7 @@ Activity mode:
 - The public repo is `TOUMO45/proofpathV2`, not `proofpath`. The learner archived v1 (`TOUMO45/proofpath`) and created `proofpathV2`, so the live URL is `https://toumo45.github.io/proofpathV2/`. The Pages workflow takes `basePath` from `actions/configure-pages`, so it follows the repo name.
 - `npm run mutation` found a rule with no test: switching off "support needs the expected outcome" (added in slice 1) failed 0 tests. It now has two regression tests in `tests/vague.test.ts`, and the script exits 1 whenever any rule survives.
 - The first Pages run failed at `configure-pages` ("Get Pages site failed") because Pages wasn't enabled yet. The workflow token can't enable it, so the learner set Source to GitHub Actions. The next run deployed.
+- Slice 5 learner priorities, recorded here: (1) the goal tests include non-form goals: dark mode, a CSV→JSON CLI, and login lockout; (2) "Try the demo" stays the primary action on Landing, with the goal box below it; (3) an end-to-end test covers own goal → approve → agent claim → Verify → NOT PROVEN (`tests/flows.test.ts`).
+- Removing a requirement also removes evidence that was linked only to it. Evidence must link to at least one requirement, and a saved session with an unlinked item would fail validation and reset. Contract Review warns before this happens. `prd.md > Contract Review` is updated.
+- Failure words (crash, error, fail…) are never target words: with "crashing" as a target, "Observed: no crash" read as a negated target and gave a false CONTRADICTED. Covered in `tests/generate.test.ts` (it fails with the filter removed).
+- Editing a requirement's text re-derives its target words and proof template. Targets can still be edited directly afterwards.

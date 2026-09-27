@@ -2,9 +2,59 @@
 // spec.md > Session Store (lib/store). Every action that changes the contract or
 // the evidence sets stale = true; only "verify" clears it.
 
+import { checkClean } from "./contract/clean";
+import { MAX_REQUIREMENTS, makeRequirement, proofTemplateFor, targetsFor } from "./contract/generate";
 import { demoSession } from "./fixtures/demo";
-import { SessionSchema, type Evidence, type EvidenceKind, type Session, type Structured } from "./types";
+import {
+  SessionSchema,
+  type Evidence,
+  type EvidenceKind,
+  type ExpectedOutcome,
+  type Requirement,
+  type Session,
+  type Structured,
+} from "./types";
 import { evidenceFlags, supersededIds, verify } from "./verify";
+
+export type RequirementPatch = { text?: string; expected?: ExpectedOutcome; targets?: string[] };
+
+/** Re-run the clean rules on every requirement (duplicates depend on the ones before it). */
+export function reflag(requirements: Requirement[]): Requirement[] {
+  return requirements.map((r, i) => ({
+    ...r,
+    flags: checkClean(
+      r.text,
+      requirements.slice(0, i).map((o) => o.text),
+    ).reasons,
+  }));
+}
+
+export function nextRequirementId(requirements: Requirement[]): string {
+  const max = requirements.reduce((m, r) => Math.max(m, Number(r.id.slice(1)) || 0), 0);
+  return `R${max + 1}`;
+}
+
+/** Approve is allowed only for 1–7 requirements that all pass the clean rules. */
+export function approvalBlocker(session: Session): string | null {
+  const reqs = session.contract.requirements;
+  if (reqs.length === 0) return "Add at least one requirement.";
+  if (reqs.length > MAX_REQUIREMENTS) return `A contract has at most ${MAX_REQUIREMENTS} requirements.`;
+  const flagged = reqs.filter((r) => r.flags.length > 0).map((r) => r.id);
+  if (flagged.length) return `Fix the flagged requirement${flagged.length > 1 ? "s" : ""} first: ${flagged.join(", ")}.`;
+  if (reqs.some((r) => r.targets.length === 0)) return "Every requirement needs at least one target word.";
+  return null;
+}
+
+/** Evidence that would be deleted with a requirement because it links to nothing else. */
+export function evidenceOnlyLinkedTo(session: Session, requirementId: string): Evidence[] {
+  return session.evidence.filter((e) => e.links.length === 1 && e.links[0] === requirementId);
+}
+
+function editContract(state: State, update: (reqs: Requirement[], s: Session) => Session): State {
+  const s = state.session;
+  if (!s || s.contract.approved) return state; // the contract is only editable while under review
+  return { ...state, session: { ...update(s.contract.requirements, s), stale: true } };
+}
 
 export const STORAGE_KEY = "proofpath.session.v1";
 
@@ -17,6 +67,13 @@ export type Action =
   | { type: "verify" }
   | { type: "addEvidence"; draft: EvidenceDraft }
   | { type: "removeEvidence"; id: string }
+  | { type: "createContract"; goal: string; requirements: Requirement[] }
+  | { type: "editRequirement"; id: string; patch: RequirementPatch }
+  | { type: "addRequirement" }
+  | { type: "removeRequirement"; id: string }
+  | { type: "splitRequirement"; id: string }
+  | { type: "approveContract" }
+  | { type: "reopenContract" }
   | { type: "reset" }
   | { type: "dismissNotice" };
 
@@ -64,6 +121,74 @@ export function reducer(state: State, action: Action): State {
       if (!s.evidence.some((e) => e.id === action.id)) return state;
       // IDs are never reused: nextEvidenceNumber does not go back down.
       return { ...state, session: { ...s, evidence: s.evidence.filter((e) => e.id !== action.id), stale: true } };
+    }
+    case "createContract":
+      return {
+        ...state,
+        notice: null,
+        session: {
+          goal: action.goal,
+          contract: { requirements: reflag(action.requirements), approved: false },
+          evidence: [],
+          verdicts: [],
+          stale: true,
+          isDemo: false,
+          nextEvidenceNumber: 1,
+        },
+      };
+    case "editRequirement":
+      return editContract(state, (reqs, s) => {
+        const next = reqs.map((r) => {
+          if (r.id !== action.id) return r;
+          const text = action.patch.text ?? r.text;
+          const expected = action.patch.expected ?? r.expected;
+          // Editing the text re-derives target words unless the patch sets them.
+          const targets = action.patch.targets ?? (action.patch.text !== undefined ? targetsFor(text) : r.targets);
+          return { ...r, text, expected, targets, proofTemplate: proofTemplateFor(text, expected) };
+        });
+        return { ...s, contract: { ...s.contract, requirements: reflag(next) } };
+      });
+    case "addRequirement":
+      return editContract(state, (reqs, s) => {
+        if (reqs.length >= MAX_REQUIREMENTS) return s;
+        const blank: Requirement = { ...makeRequirement(nextRequirementId(reqs), ""), text: "" };
+        return { ...s, contract: { ...s.contract, requirements: reflag([...reqs, blank]) } };
+      });
+    case "removeRequirement":
+      return editContract(state, (reqs, s) => {
+        // Links to a deleted requirement are removed; evidence left linked to
+        // nothing is removed with it (evidence must prove something).
+        const evidence = s.evidence
+          .map((e) => ({ ...e, links: e.links.filter((l) => l !== action.id) }))
+          .filter((e) => e.links.length > 0);
+        const kept = new Set(evidence.map((e) => e.id));
+        const cleaned = evidence.map((e) => (e.supersedes && !kept.has(e.supersedes) ? { ...e, supersedes: undefined } : e));
+        return {
+          ...s,
+          evidence: cleaned,
+          contract: { ...s.contract, requirements: reflag(reqs.filter((r) => r.id !== action.id)) },
+        };
+      });
+    case "splitRequirement":
+      return editContract(state, (reqs, s) => {
+        const i = reqs.findIndex((r) => r.id === action.id);
+        if (i < 0 || reqs.length >= MAX_REQUIREMENTS) return s;
+        const suggestion = checkClean(reqs[i].text).splitSuggestion;
+        if (!suggestion) return s;
+        const first = { ...makeRequirement(reqs[i].id, suggestion[0]) };
+        const second = makeRequirement(nextRequirementId(reqs), suggestion[1]);
+        const next = [...reqs.slice(0, i), first, second, ...reqs.slice(i + 1)];
+        return { ...s, contract: { ...s.contract, requirements: reflag(next) } };
+      });
+    case "approveContract": {
+      const s = state.session;
+      if (!s || s.contract.approved || approvalBlocker(s)) return state;
+      return { ...state, session: { ...s, contract: { ...s.contract, approved: true }, stale: true } };
+    }
+    case "reopenContract": {
+      const s = state.session;
+      if (!s || !s.contract.approved) return state;
+      return { ...state, session: { ...s, contract: { ...s.contract, approved: false }, stale: true } };
     }
     case "reset":
       return { ...state, session: null, notice: null };

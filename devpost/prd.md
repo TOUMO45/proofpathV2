@@ -104,7 +104,7 @@ Source: `scope.md > The Core Loop`.
 - A requirement that fails the clean rules blocks approval until it's fixed.
 - **Edit contract:** after approval, the developer can reopen the contract.
   - Reopening makes all verdicts stale.
-  - Links to a deleted requirement are removed.
+  - Links to a deleted requirement are removed. Evidence left linked to nothing is removed with it, and Contract Review warns before that happens ("Removing R1 also removes E3").
   - Links to an edited requirement are kept.
   - The clean rules apply again before re-approval.
 

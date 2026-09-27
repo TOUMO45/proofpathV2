@@ -1,4 +1,10 @@
-type Props = { isDemo: boolean; coverage: number | null; step: "evidence" | "proof"; onReset: () => void };
+type Props = {
+  isDemo: boolean;
+  coverage: number | null;
+  step: "evidence" | "proof";
+  onReset: () => void;
+  onEditContract: () => void;
+};
 
 const STEPS = [
   { id: "contract", label: "Contract" },
@@ -6,7 +12,7 @@ const STEPS = [
   { id: "proof", label: "Proof" },
 ] as const;
 
-export function WorkspaceTopBar({ isDemo, coverage, step, onReset }: Props) {
+export function WorkspaceTopBar({ isDemo, coverage, step, onReset, onEditContract }: Props) {
   const activeIndex = STEPS.findIndex((s) => s.id === step);
   return (
     <header className="border-b border-rule bg-paper">
@@ -40,6 +46,9 @@ export function WorkspaceTopBar({ isDemo, coverage, step, onReset }: Props) {
           <span className="font-mono text-sm" aria-label="Coverage">
             {coverage === null ? "—" : `${coverage}%`} <span className="text-muted">proven</span>
           </span>
+          <button type="button" onClick={onEditContract} className="text-sm text-muted underline underline-offset-2 hover:text-ink">
+            Edit contract
+          </button>
           <button type="button" onClick={onReset} className="text-sm text-muted underline underline-offset-2 hover:text-ink">
             Start over
           </button>
