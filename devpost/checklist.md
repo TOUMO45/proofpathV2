@@ -63,7 +63,7 @@ Build mode: fast (chosen in `4-spec`: verification and a commit for every slice,
   Learner check: In the demo, follow the Proof Gaps: add real evidence for R2 and R4, add a passing retest marked "Supersedes E3", and press Verify. Paste the copied Proof Card into a text editor. Is it something you'd put in a PR?
   Commit: `Add evidence form, supersede and Proof Card`
 
-- [ ] **4. It's live: CI on every push and a GitHub Pages deploy**
+- [x] **4. It's live: CI on every push and a GitHub Pages deploy**
   Becomes usable: A public GitHub repo where every push runs `verify:all`, and a live URL where anyone can try the demo with no install.
   Why now: The deploy path (static export + basePath) is the next real risk, and a live demo now gives time for feedback (Discord) while features are still landing.
   PRD ref: `prd.md > What We're Building` (static deploy with no API key)
@@ -146,3 +146,4 @@ Activity mode:
 - Copy as Markdown falls back to copying a selected off-screen textarea when the Clipboard API is denied. The desktop app's browser pane refused `navigator.clipboard.writeText` ("Write permission denied"), and the fallback copy was verified there.
 - The public repo is `TOUMO45/proofpathV2`, not `proofpath`. The learner archived v1 (`TOUMO45/proofpath`) and created `proofpathV2`, so the live URL is `https://toumo45.github.io/proofpathV2/`. The Pages workflow takes `basePath` from `actions/configure-pages`, so it follows the repo name.
 - `npm run mutation` found a rule with no test: switching off "support needs the expected outcome" (added in slice 1) failed 0 tests. It now has two regression tests in `tests/vague.test.ts`, and the script exits 1 whenever any rule survives.
+- The first Pages run failed at `configure-pages` ("Get Pages site failed") because Pages wasn't enabled yet. The workflow token can't enable it, so the learner set Source to GitHub Actions. The next run deployed.
