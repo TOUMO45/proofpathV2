@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "demo:verify": "tsx scripts/demo-verify.ts",
-    "verify:all": "npm run lint && npm run typecheck && npm run test && npm run build"
+    "verify:all": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "mutation": "tsx scripts/mutation.ts"
   },
   "dependencies": {
     "next": "^16.3.6",

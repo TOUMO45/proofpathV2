@@ -33,6 +33,19 @@ describe("vague approval is not proof", () => {
     expect(v.reason).toContain("no concrete observation");
   });
 
+  it("an on-topic Action with an Observed that doesn't show the expected outcome is not proof", () => {
+    // Target words come from the Action; the observation says nothing about success.
+    const e = test_("valid details", "Filled in valid details and pressed Send to submit", "Page loaded", ["R3"]);
+    const v = verdictFor(R3, [e]);
+    expect(v.status).toBe("NOT_PROVEN");
+    expect(v.reason).toContain("doesn't show the expected outcome (succeeds)");
+  });
+
+  it("a displays requirement needs something seen on screen, not just activity", () => {
+    const e = test_("none", "Opened /contact to check the name, email and message fields", "Page loaded in 300ms", ["R1"]);
+    expect(verdictFor(R1, [e]).status).toBe("NOT_PROVEN");
+  });
+
   it("accepts the same facts written as a real observation", () => {
     const real = text("Opened /contact: the name, email and message fields are visible.", ["R1"]);
     expect(verdictFor(R1, [real]).status).toBe("PROVEN");
