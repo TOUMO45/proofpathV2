@@ -1,7 +1,7 @@
 // Proof Gap builder: for every requirement that isn't PROVEN, the smallest
 // concrete test to run next. spec.md > Gap Builder (lib/gap).
 
-import type { Contract, ExpectedOutcome, Verdict } from "./types";
+import type { Contract, ExpectedOutcome, Session, Verdict } from "./types";
 
 export type ProofGap = {
   requirementId: string;
@@ -29,6 +29,33 @@ const OBSERVE: Record<ExpectedOutcome, string> = {
 
 function lowerFirst(s: string): string {
   return s.charAt(0).toLowerCase() + s.slice(1);
+}
+
+/** What "Record this test" puts in the evidence form. Observed is never pre-filled. */
+export type RecordPrefill = { requirementId: string; input: string; action: string };
+
+const SUGGESTED_INPUT: Record<ExpectedOutcome, string> = {
+  succeeds: "valid, realistic input",
+  rejects: "the input that must be refused",
+  displays: "none",
+  persists: "a changed setting, then a reload",
+};
+
+/**
+ * Input and Action for recording the gap's suggested test. The Action is the
+ * "do" part of the proof template ("Fill in valid details, press Send"); the
+ * Input is reused from the evidence being retested when there is one.
+ * Observed stays empty: pre-filling what was seen would fabricate evidence.
+ */
+export function recordPrefill(gap: ProofGap, session: Session): RecordPrefill {
+  const req = session.contract.requirements.find((r) => r.id === gap.requirementId)!;
+  const doPart = gap.action.split(/,? and (?:observe|check that)\b|\. /i)[0].replace(/[.\s]+$/, "");
+  const retested = session.evidence.find((e) => gap.retestOf.includes(e.id) && e.kind === "structured");
+  return {
+    requirementId: gap.requirementId,
+    input: retested?.structured?.input ?? SUGGESTED_INPUT[req.expected],
+    action: doPart,
+  };
 }
 
 export function buildGaps(contract: Contract, verdicts: Verdict[]): ProofGap[] {

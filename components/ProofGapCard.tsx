@@ -2,7 +2,7 @@ import type { ProofGap } from "@/lib/gap";
 import { RichText } from "./RichText";
 import { VerdictBadge } from "./VerdictBadge";
 
-export function ProofGapCard({ gap }: { gap: ProofGap }) {
+export function ProofGapCard({ gap, onRecord }: { gap: ProofGap; onRecord?: () => void }) {
   return (
     <article className="border border-rule border-l-4 border-l-notproven bg-sheet p-5" data-testid={`gap-${gap.requirementId}`}>
       <header className="flex flex-wrap items-center gap-2">
@@ -32,6 +32,15 @@ export function ProofGapCard({ gap }: { gap: ProofGap }) {
           <RichText text={gap.why} />
         </dd>
       </dl>
+      {onRecord && (
+        <button
+          type="button"
+          onClick={onRecord}
+          className="mt-4 border border-ink px-3 py-1.5 text-sm font-medium hover:bg-ink hover:text-paper"
+        >
+          Record this test
+        </button>
+      )}
     </article>
   );
 }

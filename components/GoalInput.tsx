@@ -8,13 +8,22 @@ import { useState } from "react";
 type Props = {
   onTryDemo: () => void;
   onCreate: (goal: string) => string | null;
+  onImport: (markdown: string) => string | null;
   notice: string | null;
   onDismissNotice: () => void;
 };
 
-export function GoalInput({ onTryDemo, onCreate, notice, onDismissNotice }: Props) {
+export function GoalInput({ onTryDemo, onCreate, onImport, notice, onDismissNotice }: Props) {
   const [goal, setGoal] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [plan, setPlan] = useState("");
+  const [planError, setPlanError] = useState<string | null>(null);
+
+  async function loadFile(file: File | undefined) {
+    if (!file) return;
+    setPlan(await file.text());
+    setPlanError(null);
+  }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -86,6 +95,53 @@ export function GoalInput({ onTryDemo, onCreate, notice, onDismissNotice }: Prop
           <button type="submit" className="border border-ink px-4 py-2 font-medium hover:bg-ink hover:text-paper">
             Create Proof Plan
           </button>
+        </form>
+      </section>
+
+      <section className="mt-10 border-t border-rule pt-8" aria-labelledby="plan-label">
+        <h2 id="plan-label" className="label">
+          Or paste a plan (.md)
+        </h2>
+        <p className="mt-1 text-sm text-muted">
+          A PRD, spec or checklist. Every bullet and checkbox item becomes a candidate you can pick.
+        </p>
+        <form
+          className="mt-3 space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setPlanError(onImport(plan));
+          }}
+        >
+          <label htmlFor="plan" className="sr-only">
+            Plan markdown
+          </label>
+          <textarea
+            id="plan"
+            value={plan}
+            onChange={(e) => {
+              setPlan(e.target.value);
+              if (planError) setPlanError(null);
+            }}
+            rows={4}
+            placeholder={`# My plan
+- [ ] The export button downloads a CSV file
+- [ ] ...`}
+            className="w-full border border-rule bg-sheet px-3 py-2 font-mono text-[13px] focus:border-accent"
+          />
+          <div className="flex flex-wrap items-center gap-4">
+            <button type="submit" className="border border-ink px-4 py-2 font-medium hover:bg-ink hover:text-paper">
+              Find requirements
+            </button>
+            <label className="cursor-pointer text-sm text-muted underline underline-offset-2 hover:text-ink">
+              or upload a .md file
+              <input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" className="sr-only" onChange={(e) => loadFile(e.target.files?.[0])} />
+            </label>
+          </div>
+          {planError && (
+            <p role="alert" className="text-sm text-contradicted">
+              {planError}
+            </p>
+          )}
         </form>
       </section>
 

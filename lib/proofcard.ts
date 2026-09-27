@@ -55,6 +55,14 @@ export function buildProofCard(session: Session, now: Date = new Date()): string
     }
   }
 
+  if (session.removedRequirements.length > 0) {
+    lines.push("", "**Contract changes after verification:**");
+    for (const r of session.removedRequirements) {
+      const lost = r.removedEvidence.length ? `; ${r.removedEvidence.join(", ")} removed` : "";
+      lines.push(`- ${r.id} "${r.text}" removed (was ${r.lastVerdict.replace("_", " ")}${lost})`);
+    }
+  }
+
   lines.push(
     "",
     `Verified by ProofPath rules on ${isoDate(now)}. Evidence is self-reported; ProofPath did not run any test itself.`,

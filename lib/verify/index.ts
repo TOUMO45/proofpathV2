@@ -76,10 +76,13 @@ export function verifyRequirement(req: Requirement, contract: Contract, evidence
           [...contradicts, ...supports].map(cite).join("; ") +
           "."
         : `Contradicted by ${contradicts.map(cite).join("; ")}.`;
+    const linkQuestions = overLinks(req, contract, evidence)
+      .map((o) => ` ${o.evidenceId} is linked to ${req.id} but observed "${o.quote}". Is this link intended?`)
+      .join("");
     return {
       requirementId: req.id,
       status: "CONTRADICTED",
-      reason: reason + ignored,
+      reason: reason + linkQuestions + ignored,
       evidenceIds: [...contradicts, ...supports].map((j) => j.evidence.id),
     };
   }
@@ -101,6 +104,41 @@ export function verifyRequirement(req: Requirement, contract: Contract, evidence
     reason: (parts.length ? `Not proven. ${parts.join("; ")}.` : "Not proven: no usable evidence.") + ignored,
     evidenceIds: judged.map((j) => j.evidence.id),
   };
+}
+
+function activeLinked(req: Requirement, evidence: Evidence[]): Evidence[] {
+  const superseded = supersededIds(evidence);
+  return evidence.filter((e) => e.links.includes(req.id) && !superseded.has(e.id));
+}
+
+function linkedReqs(contract: Contract, e: Evidence): Requirement[] {
+  return contract.requirements.filter((r) => e.links.includes(r.id));
+}
+
+/** Active evidence that contradicts this requirement (for the "retest after a fix?" prompt). */
+export function contradictingIds(req: Requirement, contract: Contract, evidence: Evidence[]): string[] {
+  return activeLinked(req, evidence)
+    .filter((e) => stance(req, e, linkedReqs(contract, e)).kind === "contradicts")
+    .map((e) => e.id);
+}
+
+/**
+ * Likely over-linking: evidence linked to several requirements that proves one
+ * of them but contradicts this one ("blocked" proves a rejects requirement but
+ * contradicts "valid submission succeeds"). The verdict stays CONTRADICTED;
+ * the reason asks whether the link was intended.
+ */
+export function overLinks(req: Requirement, contract: Contract, evidence: Evidence[]): { evidenceId: string; quote: string }[] {
+  const out: { evidenceId: string; quote: string }[] = [];
+  for (const e of activeLinked(req, evidence)) {
+    if (e.links.length < 2) continue;
+    const reqs = linkedReqs(contract, e);
+    const here = stance(req, e, reqs);
+    if (here.kind !== "contradicts") continue;
+    const provesOther = reqs.some((r) => r.id !== req.id && stance(r, e, reqs).kind === "supports");
+    if (provesOther) out.push({ evidenceId: e.id, quote: here.quote });
+  }
+  return out;
 }
 
 export function verify(contract: Contract, evidence: Evidence[]): Verdict[] {

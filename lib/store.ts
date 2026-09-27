@@ -67,6 +67,7 @@ export type Action =
   | { type: "verify" }
   | { type: "addEvidence"; draft: EvidenceDraft }
   | { type: "removeEvidence"; id: string }
+  | { type: "unlinkEvidence"; evidenceId: string; requirementId: string }
   | { type: "createContract"; goal: string; requirements: Requirement[] }
   | { type: "editRequirement"; id: string; patch: RequirementPatch }
   | { type: "addRequirement" }
@@ -115,6 +116,16 @@ export function reducer(state: State, action: Action): State {
         session: { ...s, evidence: [...s.evidence, evidence], nextEvidenceNumber: s.nextEvidenceNumber + 1, stale: true },
       };
     }
+    case "unlinkEvidence": {
+      const s = state.session;
+      const e = s?.evidence.find((x) => x.id === action.evidenceId);
+      // Evidence must keep at least one link; removing the last one is "Remove".
+      if (!s || !e || !e.links.includes(action.requirementId) || e.links.length < 2) return state;
+      const evidence = s.evidence.map((x) =>
+        x.id === action.evidenceId ? { ...x, links: x.links.filter((l) => l !== action.requirementId) } : x,
+      );
+      return { ...state, session: { ...s, evidence, stale: true } };
+    }
     case "removeEvidence": {
       if (!state.session) return state;
       const s = state.session;
@@ -134,6 +145,7 @@ export function reducer(state: State, action: Action): State {
           stale: true,
           isDemo: false,
           nextEvidenceNumber: 1,
+          removedRequirements: [],
         },
       };
     case "editRequirement":
@@ -163,9 +175,26 @@ export function reducer(state: State, action: Action): State {
           .filter((e) => e.links.length > 0);
         const kept = new Set(evidence.map((e) => e.id));
         const cleaned = evidence.map((e) => (e.supersedes && !kept.has(e.supersedes) ? { ...e, supersedes: undefined } : e));
+        // Audit trail: a requirement that already had a verdict leaves a record.
+        const removed = reqs.find((r) => r.id === action.id);
+        const lastVerdict = s.verdicts.find((v) => v.requirementId === action.id);
+        const removedRequirements =
+          removed && lastVerdict
+            ? [
+                ...s.removedRequirements,
+                {
+                  id: removed.id,
+                  text: removed.text,
+                  lastVerdict: lastVerdict.status,
+                  removedEvidence: s.evidence.filter((e) => !kept.has(e.id)).map((e) => e.id),
+                },
+              ]
+            : s.removedRequirements;
         return {
           ...s,
           evidence: cleaned,
+          removedRequirements,
+          verdicts: s.verdicts.filter((v) => v.requirementId !== action.id),
           contract: { ...s.contract, requirements: reflag(reqs.filter((r) => r.id !== action.id)) },
         };
       });

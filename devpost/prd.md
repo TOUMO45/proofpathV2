@@ -79,7 +79,7 @@ The clean rules apply to **every** requirement, whether it was generated, import
 Source: `scope.md > What "Working" Looks Like` (item 2), `scope.md > The POC Boundary`.
 
 Deliberately simple:
-- It reads bullet and checkbox items (`- [ ]`, `- `) from pasted markdown as candidate requirements.
+- It reads bullet and checkbox items (`- [ ]`, `- `) from pasted markdown or an uploaded `.md` file as candidate requirements. Frontmatter and fenced code blocks are skipped.
 - It runs them through the same clean rules.
 - It lists **every** candidate it finds, flagged ones included. It doesn't just take the first 7.
 - The developer selects up to 7 of them for the contract.
@@ -91,6 +91,7 @@ Items that fail the clean rules are **flagged, never silently dropped or auto-sp
 This is the last build slice. If time runs short, it moves to Later.
 
 - [ ] Pasting this project's own `prd.md` lists all of its candidates, flagged ones included, and at most 7 can be selected.
+- [ ] Import → select → approve → paste an agent claim → Verify gives NOT PROVEN, naming the hypothetical wording.
 - [ ] An item like "- [ ] saves the file and shows a toast" appears with a "needs edit" badge and a Split into 2 suggestion. It can't be approved until it's fixed.
 - [ ] Pasted markdown with no bullet or checkbox items tells the developer that nothing was found, and falls back to manual entry.
 - [ ] Selecting an 8th candidate isn't possible.
@@ -137,6 +138,21 @@ Each item gets an ID (E1, E2, …).
 - [ ] "Supersedes" only offers evidence that shares at least one linked requirement with the new item.
 - [ ] A superseded item stays visible, struck through, and contributes nothing to any verdict.
 - [ ] Adding, superseding or removing evidence marks the current verdicts as stale. Stale verdicts are never shown as current, and the developer must verify again.
+
+### Guidance While Recording Evidence
+Source: the slice-4 learner check. The verifier was right every time, but nothing guided the developer. These only suggest. They never link, unlink or supersede anything by themselves.
+
+- **Record this test:** every Proof Gap card has this button. It opens the evidence form as a structured test, linked only to that requirement, with Input and Action pre-filled from the suggested test. Observed stays **empty**, with the placeholder "What did you actually see?", because pre-filling an observation would fabricate evidence.
+- **Over-linking hint:** when evidence linked to several requirements proves one of them but contradicts another, the reason says so: "E4 is linked to R3 but observed "…". Is this link intended?". A one-click **Unlink E4 from R3** follows. Unlinking makes verdicts stale. When a sentence's words belong to another linked requirement, it is neutral for this one, not a contradiction, so nothing is asked.
+- **Visible Supersedes:** when a linked requirement is currently CONTRADICTED, the form asks "R3 is contradicted by E3. Is this a retest after a fix?", with a checkbox that sets Supersedes.
+- **Missing-link hint:** when the observation mentions an unlinked requirement's target words (same threshold as support), the form asks "This also mentions R4's targets (…). Link to R4 too?". The link is added only on click.
+- **Demo only:** a "Show me a passing retest" link fills a sample Observed, labeled **sample (demo)**, so the demo can reach 100% in a few clicks. It never appears outside the demo.
+
+- [ ] Record this test pre-links only its requirement and pre-fills Input and Action, never Observed.
+- [ ] An evidence item that proves R2 but contradicts R3 gets "Is this link intended?" in R3's reason, and Unlink removes only that link.
+- [ ] Linking a CONTRADICTED requirement shows the retest prompt for the evidence contradicting it.
+- [ ] An observation mentioning R4's targets offers "Link to R4 too?" without linking.
+- [ ] The demo sample is offered only in the demo.
 
 ### Verification
 Source: `scope.md > What "Working" Looks Like` (items 4–5), `scope.md > The Unique Kernel`.
@@ -194,6 +210,11 @@ It says "verified by ProofPath rules" and nothing more. It isn't a certificate a
 - [ ] Copy as Markdown puts a checklist on the clipboard with the goal, the requirements, the evidence IDs, the count and the date.
 - [ ] Download .md saves the same content as a file.
 - [ ] If any evidence was superseded, the Proof Card lists it along with what superseded it.
+
+### Audit Trail for Deleted Requirements
+If a requirement that already had a verdict is deleted, its text, last verdict and removed evidence IDs are kept. The Proof Card then shows a **Contract changes after verification** section, e.g. `R3 "Submitting valid details succeeds" removed (was CONTRADICTED; E3 removed)`. Deleting a requirement that never had a verdict leaves no trace. This closes the "delete the failing requirement to get 100%" bluff.
+
+- [ ] Demo → Verify → delete R3 → 100% → the Proof Card lists R3 as removed while CONTRADICTED.
 
 ### Built-in Demo
 Source: `scope.md > The POC Boundary`, `scope.md > What "Working" Looks Like` ("oh, that's cool" beat).

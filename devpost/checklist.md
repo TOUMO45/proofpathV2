@@ -96,7 +96,7 @@ Build mode: fast (chosen in `4-spec`: verification and a commit for every slice,
   Learner check: Type a goal from something you've actually asked an agent to build. Are the requirements ones you'd accept as a contract? Try to slip a vague or double requirement past Contract Review.
   Commit: `Generate and review contracts from your own goal`
 
-- [ ] **6. Import a plan: ProofPath verifies from its own planning docs**
+- [x] **6. Import a plan: ProofPath verifies from its own planning docs**
   Becomes usable: The "Paste a plan" tab lists every bullet and checkbox candidate found, with "needs edit" flags. You select up to 7, and they go to Contract Review. If nothing is found, you see a message and a manual-entry fallback.
   Why now: Last, by your decision in `scope.md > Build Order`. If time runs short, it moves to Later without affecting the rest.
   PRD ref: `prd.md > Plan Import`
@@ -151,3 +151,7 @@ Activity mode:
 - Removing a requirement also removes evidence that was linked only to it. Evidence must link to at least one requirement, and a saved session with an unlinked item would fail validation and reset. Contract Review warns before this happens. `prd.md > Contract Review` is updated.
 - Failure words (crash, error, fail…) are never target words: with "crashing" as a target, "Observed: no crash" read as a negated target and gave a false CONTRADICTED. Covered in `tests/generate.test.ts` (it fails with the filter removed).
 - Editing a requirement's text re-derives its target words and proof template. Targets can still be edited directly afterwards.
+- Slice-4 learner check (live site, phone): reached 100% and the Proof Card after several tries. Every failure was the UI, not the verifier. Six guidance fixes were folded into slice 6 before plan import: Record this test, the over-linking hint with Unlink, visible Supersedes, the missing-link hint, the demo-only sample retest, and the audit trail for deleted requirements. See `prd.md > Guidance While Recording Evidence` and `prd.md > Audit Trail for Deleted Requirements`.
+- The over-linking test fixture was corrected, not weakened. With "Blocked" as the observation, the sentence matches R2's own target word ("block"), so the relevance rule makes it neutral for R3, not a contradiction, and there is nothing to ask about. The test now uses "Submission refused", which is about R3 and contradicts it. A second test pins the neutral case.
+- Adding evidence hides the Proof Gap cards (and their Record buttons) until the next Verify, because gaps come only from current verdicts. Recording several gaps therefore needs a Verify between them.
+- Plan import on this repo's `devpost/prd.md` finds 150 candidates, 8 flagged. Noun-phrase bullets ("A Try the demo button") get `expected: succeeds`, where `displays` would fit better; it's editable in review.

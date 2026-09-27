@@ -60,6 +60,16 @@ export const ContractSchema = z.object({
 });
 export type Contract = z.infer<typeof ContractSchema>;
 
+// A requirement deleted after it had a verdict. Kept so the Proof Card can say
+// so: deleting the failing requirement is not a way to reach 100%.
+export const RemovedRequirementSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  lastVerdict: VerdictStatusSchema,
+  removedEvidence: z.array(z.string()),
+});
+export type RemovedRequirement = z.infer<typeof RemovedRequirementSchema>;
+
 export const SessionSchema = z.object({
   goal: z.string(),
   contract: ContractSchema,
@@ -68,5 +78,6 @@ export const SessionSchema = z.object({
   stale: z.boolean(),
   isDemo: z.boolean(),
   nextEvidenceNumber: z.number().int().min(1),
+  removedRequirements: z.array(RemovedRequirementSchema).default([]),
 });
 export type Session = z.infer<typeof SessionSchema>;

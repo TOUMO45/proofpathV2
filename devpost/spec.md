@@ -163,6 +163,15 @@ PRD ref: `prd.md > Proof Card`.
 
 PRD ref: `prd.md > States and Boundaries`, `prd.md > Evidence`, `prd.md > Contract Review`.
 
+### Evidence Guidance (`lib/hints.ts`, `lib/gap.ts > recordPrefill`)
+- **`recordPrefill(gap, session)`** gives Input and Action for Record this test. Action is the "do" part of the proof template. Input is reused from the evidence being retested, or a generic suggestion by `expected`. There is no Observed field.
+- **`missingLinkHints`** finds unlinked requirements whose targets the observation already meets (the support threshold).
+- **`retestPrompts`** finds contradicting evidence (`verify > contradictingIds`) on linked CONTRADICTED requirements that can still be superseded.
+- **`demoSampleFor`** returns the sample Observed only when `session.isDemo`.
+- **`verify > overLinks`** finds multi-linked evidence that supports another linked requirement and contradicts this one. It's appended to the CONTRADICTED reason as "… Is this link intended?". The store action `unlinkEvidence` removes one link and never the last one.
+
+PRD ref: `prd.md > Guidance While Recording Evidence`.
+
 ### UI Components (`components/`)
 - **`GoalInput`:** Landing, with the goal textarea and the "Paste a plan" tab.
 - **`ImportPicker`:** the candidate list with flags, selecting up to 7.
@@ -226,6 +235,7 @@ type Session = {
   stale: boolean;
   isDemo: boolean;
   nextEvidenceNumber: number;
+  removedRequirements: { id: string; text: string; lastVerdict: VerdictStatus; removedEvidence: string[] }[]; // audit trail
 };
 ```
 

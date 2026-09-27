@@ -2,18 +2,20 @@
 
 // Screen switcher: Landing → Workspace. spec.md > File Structure.
 
-import { useEffect, useReducer } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { ContractReview } from "@/components/ContractReview";
 import { CoverageBar } from "@/components/CoverageBar";
 import { EvidenceForm } from "@/components/EvidenceForm";
 import { EvidenceList } from "@/components/EvidenceList";
 import { GoalInput } from "@/components/GoalInput";
+import { ImportPicker } from "@/components/ImportPicker";
 import { ProofGapCard } from "@/components/ProofGapCard";
 import { ProofCard } from "@/components/ProofCard";
 import { ProofGraph } from "@/components/ProofGraph";
 import { WorkspaceTopBar } from "@/components/WorkspaceTopBar";
-import { generateContract } from "@/lib/contract/generate";
-import { buildGaps } from "@/lib/gap";
+import { generateContract, makeRequirement } from "@/lib/contract/generate";
+import { importPlan, type ImportResult } from "@/lib/import/plan";
+import { buildGaps, recordPrefill, type RecordPrefill } from "@/lib/gap";
 import { buildProofCard } from "@/lib/proofcard";
 import { hasCurrentVerdicts, initialState, loadSaved, reducer, save } from "@/lib/store";
 import { coverage } from "@/lib/verify";
@@ -28,6 +30,10 @@ function browserStorage(): Storage | undefined {
 
 export default function Home() {
   const [state, dispatch] = useReducer(reducer, initialState);
+  // "Record this test": which gap the evidence form is pre-filled for. The
+  // counter remounts the form so each click starts from a fresh pre-fill.
+  const [record, setRecord] = useState<{ prefill: RecordPrefill; n: number } | null>(null);
+  const [imported, setImported] = useState<ImportResult | null>(null);
   useEffect(() => {
     const { session, notice } = loadSaved(browserStorage());
     dispatch({ type: "hydrate", session, notice });
@@ -40,6 +46,24 @@ export default function Home() {
   const { session } = state;
   if (!state.hydrated) return <div className="min-h-screen" aria-busy="true" />;
 
+  if (!session && imported) {
+    return (
+      <ImportPicker
+        result={imported}
+        onBack={() => setImported(null)}
+        onUse={(goal, texts) => {
+          const requirements = texts.map((t, i) => makeRequirement(`R${i + 1}`, t));
+          setImported(null);
+          dispatch({ type: "createContract", goal, requirements });
+        }}
+        onManual={(goal) => {
+          setImported(null);
+          dispatch({ type: "createContract", goal, requirements: [{ ...makeRequirement("R1", ""), text: "" }] });
+        }}
+      />
+    );
+  }
+
   if (!session) {
     return (
       <GoalInput
@@ -48,6 +72,11 @@ export default function Home() {
           const result = generateContract(goal);
           if (!result.ok) return result.error;
           dispatch({ type: "createContract", goal: goal.trim(), requirements: result.requirements });
+          return null;
+        }}
+        onImport={(markdown) => {
+          if (!markdown.trim()) return "Paste a plan or upload a .md file first.";
+          setImported(importPlan(markdown));
           return null;
         }}
         notice={state.notice}
@@ -70,8 +99,14 @@ export default function Home() {
         isDemo={session.isDemo}
         coverage={pct}
         step={pct === 100 ? "proof" : "evidence"}
-        onReset={() => dispatch({ type: "reset" })}
-        onEditContract={() => dispatch({ type: "reopenContract" })}
+        onReset={() => {
+          setRecord(null);
+          dispatch({ type: "reset" });
+        }}
+        onEditContract={() => {
+          setRecord(null);
+          dispatch({ type: "reopenContract" });
+        }}
       />
       <main className="mx-auto grid max-w-6xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0 space-y-6">
@@ -81,14 +116,29 @@ export default function Home() {
             total={session.contract.requirements.length}
             state={current ? "current" : session.verdicts.length ? "stale" : "unverified"}
           />
-          <ProofGraph session={session} current={current} />
+          <ProofGraph
+            session={session}
+            current={current}
+            onUnlink={(evidenceId, requirementId) => dispatch({ type: "unlinkEvidence", evidenceId, requirementId })}
+          />
           {gaps.length > 0 && (
             <section aria-labelledby="gaps-label" className="space-y-3">
               <h2 id="gaps-label" className="label">
                 Proof gaps · {gaps.length} open
               </h2>
               {gaps.map((g) => (
-                <ProofGapCard key={g.requirementId} gap={g} />
+                <ProofGapCard
+                  key={g.requirementId}
+                  gap={g}
+                  onRecord={() => {
+                    setRecord((prev) => ({ prefill: recordPrefill(g, session), n: (prev?.n ?? 0) + 1 }));
+                    requestAnimationFrame(() => {
+                      const form = document.getElementById("evidence-form");
+                      form?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      form?.querySelector<HTMLInputElement>("[data-testid=observed-input]")?.focus({ preventScroll: true });
+                    });
+                  }}
+                />
               ))}
             </section>
           )}
@@ -114,7 +164,15 @@ export default function Home() {
             Evidence · {session.evidence.length}
           </h2>
           <EvidenceList evidence={session.evidence} onRemove={(id) => dispatch({ type: "removeEvidence", id })} />
-          <EvidenceForm session={session} onAdd={(draft) => dispatch({ type: "addEvidence", draft })} />
+          <EvidenceForm
+            key={record ? `record-${record.n}` : "blank"}
+            session={session}
+            prefill={record?.prefill}
+            onAdd={(draft) => {
+              dispatch({ type: "addEvidence", draft });
+              setRecord(null);
+            }}
+          />
         </aside>
       </main>
     </div>

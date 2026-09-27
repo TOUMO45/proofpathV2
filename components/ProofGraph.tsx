@@ -2,11 +2,13 @@
 // spec.md > UI Components: no graph library.
 
 import type { Session } from "@/lib/types";
-import { supersededIds } from "@/lib/verify";
+import { overLinks, supersededIds } from "@/lib/verify";
 import { RichText } from "./RichText";
 import { VerdictBadge } from "./VerdictBadge";
 
-export function ProofGraph({ session, current }: { session: Session; current: boolean }) {
+type Props = { session: Session; current: boolean; onUnlink?: (evidenceId: string, requirementId: string) => void };
+
+export function ProofGraph({ session, current, onUnlink }: Props) {
   const superseded = supersededIds(session.evidence);
   return (
     <section aria-labelledby="graph-label" className="border border-rule bg-sheet">
@@ -66,6 +68,20 @@ export function ProofGraph({ session, current }: { session: Session; current: bo
                   <p className="mt-2 text-sm leading-relaxed text-ink/90">
                     <RichText text={verdict.reason} />
                   </p>
+                )}
+                {verdict && current && verdict.status === "CONTRADICTED" && onUnlink && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {overLinks(req, session.contract, session.evidence).map((o) => (
+                      <button
+                        key={o.evidenceId}
+                        type="button"
+                        onClick={() => onUnlink(o.evidenceId, req.id)}
+                        className="border border-ink px-2 py-1 text-xs font-medium hover:bg-ink hover:text-paper"
+                      >
+                        Unlink {o.evidenceId} from {req.id}
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
             </li>

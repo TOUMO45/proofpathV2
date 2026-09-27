@@ -1,10 +1,13 @@
 "use client";
 
 // Add evidence: a structured test, free text, or an AI agent's own claim.
-// Links are always chosen explicitly; "Supersedes" is the retest-after-fix path.
-// prd.md > Evidence.
+// Links are always chosen explicitly; hints only suggest. prd.md > Evidence.
+// "Record this test" remounts this form (via `key`) with Input/Action and one
+// link pre-filled; Observed is never pre-filled.
 
 import { useState } from "react";
+import type { RecordPrefill } from "@/lib/gap";
+import { demoSampleFor, missingLinkHints, retestPrompts } from "@/lib/hints";
 import type { EvidenceDraft } from "@/lib/store";
 import { supersedableEvidence, validateDraft } from "@/lib/store";
 import type { EvidenceKind, Session } from "@/lib/types";
@@ -17,16 +20,23 @@ const KINDS: { id: EvidenceKind; label: string; hint: string }[] = [
 
 const input = "w-full border border-rule bg-paper px-2 py-1.5 font-mono text-[13px] focus:border-accent";
 
-export function EvidenceForm({ session, onAdd }: { session: Session; onAdd: (draft: EvidenceDraft) => void }) {
+type Props = { session: Session; onAdd: (draft: EvidenceDraft) => void; prefill?: RecordPrefill };
+
+export function EvidenceForm({ session, onAdd, prefill }: Props) {
   const [kind, setKind] = useState<EvidenceKind>("structured");
   const [text, setText] = useState("");
-  const [structured, setStructured] = useState({ input: "", action: "", observed: "" });
-  const [links, setLinks] = useState<string[]>([]);
+  const [structured, setStructured] = useState({ input: prefill?.input ?? "", action: prefill?.action ?? "", observed: "" });
+  const [links, setLinks] = useState<string[]>(prefill ? [prefill.requirementId] : []);
   const [supersedes, setSupersedes] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const candidates = supersedableEvidence(session, links);
   const supersedesValid = candidates.some((e) => e.id === supersedes);
+  const observedText = kind === "structured" ? structured.observed : text;
+  const linkHints = missingLinkHints(session, observedText, links);
+  const retests = retestPrompts(session, links);
+  const sample = demoSampleFor(session, kind, links);
+  const usingSample = sample !== undefined && structured.observed === sample;
 
   function toggleLink(id: string) {
     setLinks((prev) => (prev.includes(id) ? prev.filter((l) => l !== id) : [...prev, id]));
@@ -54,9 +64,9 @@ export function EvidenceForm({ session, onAdd }: { session: Session; onAdd: (dra
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3 border border-rule bg-sheet p-4" aria-labelledby="add-evidence-label">
+    <form id="evidence-form" onSubmit={submit} className="space-y-3 border border-rule bg-sheet p-4" aria-labelledby="add-evidence-label">
       <h2 id="add-evidence-label" className="label">
-        Add evidence
+        {prefill ? `Record the test for ${prefill.requirementId}` : "Add evidence"}
       </h2>
 
       <div role="radiogroup" aria-label="Evidence kind" className="flex flex-wrap gap-1">
@@ -77,19 +87,43 @@ export function EvidenceForm({ session, onAdd }: { session: Session; onAdd: (dra
 
       {kind === "structured" ? (
         <div className="space-y-2">
-          {(["input", "action", "observed"] as const).map((f) => (
+          {(["input", "action"] as const).map((f) => (
             <label key={f} className="block">
               <span className="label text-xs">{f}</span>
               <input
                 className={input}
                 value={structured[f]}
                 onChange={(ev) => setStructured({ ...structured, [f]: ev.target.value })}
-                placeholder={
-                  f === "input" ? "email=not-an-email" : f === "action" ? "Entered the email and pressed Send" : "Message 'Please enter a valid email' shown"
-                }
+                placeholder={f === "input" ? "email=not-an-email" : "Entered the email and pressed Send"}
               />
             </label>
           ))}
+          <label className="block">
+            <span className="label text-xs">
+              observed{" "}
+              {usingSample && (
+                <span className="ml-1 border border-accent px-1 font-mono text-[10px] tracking-wider text-accent normal-case">
+                  sample (demo)
+                </span>
+              )}
+            </span>
+            <input
+              className={input}
+              value={structured.observed}
+              onChange={(ev) => setStructured({ ...structured, observed: ev.target.value })}
+              placeholder="What did you actually see?"
+              data-testid="observed-input"
+            />
+          </label>
+          {sample && !usingSample && (
+            <button
+              type="button"
+              onClick={() => setStructured({ ...structured, observed: sample })}
+              className="text-xs text-accent underline underline-offset-2"
+            >
+              Show me a passing retest (demo sample)
+            </button>
+          )}
         </div>
       ) : (
         <label className="block">
@@ -121,8 +155,32 @@ export function EvidenceForm({ session, onAdd }: { session: Session; onAdd: (dra
         </div>
       </fieldset>
 
+      {linkHints.map((h) => (
+        <p key={h.requirementId} className="border border-rule bg-paper p-2 text-sm" data-testid={`link-hint-${h.requirementId}`}>
+          This also mentions {h.requirementId}&apos;s targets ({h.matched.join(", ")}).{" "}
+          <button type="button" onClick={() => toggleLink(h.requirementId)} className="text-accent underline underline-offset-2">
+            Link to {h.requirementId} too?
+          </button>
+        </p>
+      ))}
+
+      {retests.map((p) => (
+        <label key={p.evidenceId} className="flex items-start gap-2 border border-contradicted bg-paper p-2 text-sm" data-testid={`retest-${p.evidenceId}`}>
+          <input
+            type="checkbox"
+            className="mt-1 accent-accent"
+            checked={supersedes === p.evidenceId}
+            onChange={(ev) => setSupersedes(ev.target.checked ? p.evidenceId : "")}
+          />
+          <span>
+            {p.requirementId} is contradicted by {p.evidenceId}. Is this a retest after a fix?{" "}
+            <span className="text-muted">(supersedes {p.evidenceId}, which is kept as an audit trail)</span>
+          </span>
+        </label>
+      ))}
+
       <label className="block">
-        <span className="label text-xs">Supersedes (retest after a fix)</span>
+        <span className="label text-xs">Supersedes</span>
         <select
           className={input}
           value={supersedesValid ? supersedes : ""}

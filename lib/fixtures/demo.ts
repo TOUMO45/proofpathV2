@@ -103,6 +103,18 @@ export const demoFixEvidence: Evidence[] = [
   },
 ];
 
+/**
+ * DEMO ONLY: sample observations for "Show me a passing retest", so the demo can
+ * reach 100% in a few clicks. The form labels them "sample (demo)"; they are
+ * never offered outside the demo.
+ */
+export const demoSampleObserved: Record<string, string> = {
+  R1: "Name, email and message fields are visible",
+  R2: "Validation message 'Please enter a valid email' shown; form not submitted",
+  R3: "No errors; confirmation message 'Thanks, we received your message' shown",
+  R4: "Confirmation message 'Thanks, we received your message' shown after submitting",
+};
+
 export function demoSession(): Session {
   return {
     goal: DEMO_GOAL,
@@ -112,5 +124,6 @@ export function demoSession(): Session {
     stale: true,
     isDemo: true,
     nextEvidenceNumber: 4,
+    removedRequirements: [],
   };
 }
