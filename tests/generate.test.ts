@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_REQUIREMENTS, generateContract } from "@/lib/contract/generate";
+import { MAX_REQUIREMENTS, classify, generateContract } from "@/lib/contract/generate";
 import { checkClean } from "@/lib/contract/clean";
 import { verify } from "@/lib/verify";
 import type { Evidence, ExpectedOutcome, Requirement } from "@/lib/types";
@@ -61,6 +61,19 @@ describe("goal → clean contract (5 non-demo goals)", () => {
     const reqs = contract("Show a contact form where name, email and message fields are visible");
     expect(reqs.some((r) => /name, email and message fields/.test(r.text))).toBe(true);
     expect(reqs.every((r) => r.flags.length === 0)).toBe(true);
+  });
+
+  it.each(["A Try the demo button", "The coverage meter", "A Create Proof Plan button"])(
+    "a noun phrase with no verb is drafted as displays: %s",
+    (text) => {
+      expect(classify(text)).toBe("displays");
+    },
+  );
+
+  it("a sentence with a verb is not affected by the noun-phrase rule", () => {
+    expect(classify("The CLI converts CSV to JSON")).toBe("succeeds");
+    expect(classify("The Create button saves the draft")).toBe("succeeds");
+    expect(classify("Evidence linked to no requirement can't be added")).toBe("rejects");
   });
 
   it("an empty or too-short goal is an error, not a contract", () => {

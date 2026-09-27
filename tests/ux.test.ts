@@ -2,7 +2,7 @@
 // every time; these make the UI say what to do next, without ever deciding for you.
 
 import { describe, expect, it } from "vitest";
-import { buildGaps, recordPrefill } from "@/lib/gap";
+import { buildGaps, gapsForDisplay, recordPrefill } from "@/lib/gap";
 import { demoContract, demoSampleObserved, demoSession } from "@/lib/fixtures/demo";
 import { demoSampleFor, missingLinkHints, retestPrompts } from "@/lib/hints";
 import { buildProofCard } from "@/lib/proofcard";
@@ -142,6 +142,43 @@ describe("5. Demo-only sample retest", () => {
       st,
     );
     expect(st.session!.verdicts.map((v) => v.status)).toEqual(["PROVEN", "PROVEN", "PROVEN", "PROVEN"]);
+  });
+});
+
+describe("Stale gaps stay visible (final-review feedback)", () => {
+  it("after adding evidence, the gaps are still listed, marked stale, not hidden", () => {
+    const st = run(
+      [{ type: "addEvidence", draft: { kind: "structured", structured: { input: "x", action: "Pressed Send", observed: demoSampleObserved.R2 }, links: ["R2"] } }],
+      verifiedDemo(),
+    );
+    const { gaps, stale } = gapsForDisplay(st.session!);
+    expect(stale).toBe(true);
+    expect(gaps.map((g) => g.requirementId)).toEqual(["R2", "R3", "R4"]);
+  });
+
+  it("several gaps can be recorded before a single Verify", () => {
+    let st = verifiedDemo();
+    const first = gapsForDisplay(st.session!).gaps;
+    const p2 = recordPrefill(first.find((g) => g.requirementId === "R2")!, st.session!);
+    st = run([{ type: "addEvidence", draft: { kind: "structured", structured: { input: p2.input, action: p2.action, observed: demoSampleObserved.R2 }, links: ["R2"] } }], st);
+    // still stale, gaps still there: record R3 from the stale card
+    const staleGaps = gapsForDisplay(st.session!);
+    expect(staleGaps.stale).toBe(true);
+    const p3 = recordPrefill(staleGaps.gaps.find((g) => g.requirementId === "R3")!, st.session!);
+    expect(p3.input).toBe("name=Ada, email=ada@example.com, message=Hello");
+    st = run(
+      [
+        { type: "addEvidence", draft: { kind: "structured", structured: { input: p3.input, action: p3.action, observed: demoSampleObserved.R3 }, links: ["R3", "R4"], supersedes: "E3" } },
+        { type: "verify" },
+      ],
+      st,
+    );
+    expect(st.session!.verdicts.every((v) => v.status === "PROVEN")).toBe(true);
+    expect(gapsForDisplay(st.session!)).toEqual({ gaps: [], stale: false });
+  });
+
+  it("before any Verify there are no gaps to show", () => {
+    expect(gapsForDisplay(run([{ type: "loadDemo" }]).session!)).toEqual({ gaps: [], stale: false });
   });
 });
 

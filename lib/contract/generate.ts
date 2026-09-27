@@ -5,7 +5,7 @@
 
 import type { ExpectedOutcome, Requirement } from "../types";
 import { contentWords, normalize, stem, tokenize } from "../text";
-import { capitalize, checkClean, startsWithVerb, tidy } from "./clean";
+import { capitalize, checkClean, hasFiniteVerb, startsWithVerb, tidy } from "./clean";
 
 export const MAX_REQUIREMENTS = 7;
 export const MIN_GOAL_WORDS = 3;
@@ -73,6 +73,9 @@ export function classify(text: string): ExpectedOutcome {
   if (/\b(persists?|persisted|after (a |the )?(page )?(reload|refresh|restart)|remembers?|survives?|still there|is kept|keeps? .* after)\b/.test(t))
     return "persists";
   if (/\b(visible|is shown|are shown|shows?|displays?|displayed|appears?|renders?|is available)\b/.test(t)) return "displays";
+  // A noun phrase with no verb ("The coverage meter", "A Try the demo button")
+  // names something on screen: the claim is that it's there.
+  if (!hasFiniteVerb(t)) return "displays";
   return "succeeds";
 }
 

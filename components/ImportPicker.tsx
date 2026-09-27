@@ -1,23 +1,36 @@
 "use client";
 
-// Pick up to 7 candidates from a pasted plan. Flagged items can be selected,
-// but Contract Review won't approve them until they pass the clean rules.
+// Pick up to 7 candidates from a pasted plan. Checkbox items by default; plain
+// bullets on request. Flagged items can be selected, but Contract Review won't
+// approve them until they pass the clean rules.
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { MAX_REQUIREMENTS } from "@/lib/contract/generate";
-import { canSelect, splitCandidate, toggleSelected, type ImportResult } from "@/lib/import/plan";
+import { canSelect, filterCandidates, importPlan, splitCandidate, toggleSelected } from "@/lib/import/plan";
 
 type Props = {
-  result: ImportResult;
+  markdown: string;
   onUse: (goal: string, texts: string[]) => void;
   onManual: (goal: string) => void;
   onBack: () => void;
 };
 
-export function ImportPicker({ result, onUse, onManual, onBack }: Props) {
-  const [candidates, setCandidates] = useState(result.candidates);
-  const [selected, setSelected] = useState<string[]>([]);
+export function ImportPicker({ markdown, onUse, onManual, onBack }: Props) {
+  const [includePlain, setIncludePlain] = useState(false);
+  const result = useMemo(() => importPlan(markdown, { includePlainBullets: includePlain }), [markdown, includePlain]);
+  // Splits and selection belong to one result; switching the toggle starts over.
+  const [edits, setEdits] = useState<{ key: boolean; candidates: typeof result.candidates; selected: string[] }>({
+    key: includePlain,
+    candidates: result.candidates,
+    selected: [],
+  });
+  const current = edits.key === includePlain ? edits : { key: includePlain, candidates: result.candidates, selected: [] };
+  const { candidates, selected } = current;
+  const [query, setQuery] = useState("");
+  const shown = filterCandidates(candidates, query);
   const goal = `Imported plan: ${result.title}`;
+
+  const update = (patch: Partial<typeof current>) => setEdits({ ...current, ...patch });
 
   return (
     <main className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6">
@@ -32,15 +45,41 @@ export function ImportPicker({ result, onUse, onManual, onBack }: Props) {
         <h1 className="label">Import a plan · pick what to verify</h1>
         <p className="mt-2 text-lg">{result.title}</p>
         <p className="mt-2 text-sm text-muted">
-          Every bullet and checkbox item found is listed. Select up to {MAX_REQUIREMENTS}. Items marked NEEDS EDIT can be
-          split here or fixed in the next step; the contract can&apos;t be approved until they pass the clean rules.
+          Checkbox items (<code>- [ ]</code>) are listed; plain bullets only if you include them. Select up to{" "}
+          {MAX_REQUIREMENTS}. Items marked NEEDS EDIT can be split here or fixed in the next step; the contract can&apos;t be
+          approved until they pass the clean rules.
         </p>
       </section>
 
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" className="accent-accent" checked={includePlain} onChange={(e) => setIncludePlain(e.target.checked)} />
+          Include plain bullets
+          {!includePlain && result.skippedPlainBullets > 0 && <span className="text-muted">({result.skippedPlainBullets} more)</span>}
+        </label>
+        {candidates.length > 0 && (
+          <label className="flex min-w-0 flex-1 items-center gap-2 text-sm">
+            <span className="label text-xs">Filter</span>
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="e.g. demo, Proof Card, stale"
+              className="w-full min-w-0 border border-rule bg-sheet px-2 py-1.5 focus:border-accent"
+              data-testid="candidate-filter"
+            />
+          </label>
+        )}
+      </div>
+
       {candidates.length === 0 ? (
         <div role="status" className="border border-notproven bg-sheet p-4">
-          <p className="font-medium">No bullet or checkbox items found.</p>
-          <p className="mt-1 text-sm text-muted">Write the requirements yourself instead.</p>
+          <p className="font-medium">{includePlain || result.skippedPlainBullets === 0 ? "No bullet or checkbox items found." : "No checkbox items found."}</p>
+          <p className="mt-1 text-sm text-muted">
+            {!includePlain && result.skippedPlainBullets > 0
+              ? `Tick "Include plain bullets" to list ${result.skippedPlainBullets} bullet item${result.skippedPlainBullets === 1 ? "" : "s"}, or write the requirements yourself.`
+              : "Write the requirements yourself instead."}
+          </p>
           <button
             type="button"
             onClick={() => onManual(goal)}
@@ -53,22 +92,30 @@ export function ImportPicker({ result, onUse, onManual, onBack }: Props) {
         <>
           <p className="text-sm" role="status">
             <span className="font-mono">{selected.length}</span> of {MAX_REQUIREMENTS} selected · {candidates.length} found
+            {query.trim() && ` · ${shown.length} match "${query.trim()}"`}
           </p>
           <ul className="space-y-2">
-            {candidates.map((c) => {
+            {shown.map((c) => {
               const checked = selected.includes(c.id);
               const disabled = !canSelect(selected, c.id);
               return (
-                <li key={c.id} className={`border bg-sheet p-3 ${c.flags.length ? "border-l-4 border-rule border-l-contradicted" : "border-rule"}`} data-testid={`candidate-${c.id}`}>
+                <li
+                  key={c.id}
+                  className={`border bg-sheet p-3 ${c.flags.length ? "border-l-4 border-rule border-l-contradicted" : "border-rule"}`}
+                  data-testid={`candidate-${c.id}`}
+                >
                   <label className={`flex items-start gap-2 ${disabled ? "text-muted" : ""}`}>
                     <input
                       type="checkbox"
                       className="mt-1 accent-accent"
                       checked={checked}
                       disabled={disabled}
-                      onChange={() => setSelected((s) => toggleSelected(s, c.id))}
+                      onChange={() => update({ selected: toggleSelected(selected, c.id) })}
                     />
-                    <span>{c.text}</span>
+                    <span className="min-w-0">
+                      <span className="block break-words">{c.text}</span>
+                      {c.heading && <span className="mt-0.5 block text-xs text-muted">from: {c.heading}</span>}
+                    </span>
                   </label>
                   {c.flags.length > 0 && (
                     <div className="mt-2 ml-6 flex flex-wrap items-center gap-2 text-sm">
@@ -79,10 +126,7 @@ export function ImportPicker({ result, onUse, onManual, onBack }: Props) {
                       {c.splitSuggestion && (
                         <button
                           type="button"
-                          onClick={() => {
-                            setCandidates((cs) => splitCandidate(cs, c.id));
-                            setSelected((s) => s.filter((x) => x !== c.id));
-                          }}
+                          onClick={() => update({ candidates: splitCandidate(candidates, c.id), selected: selected.filter((x) => x !== c.id) })}
                           className="border border-ink px-2 py-0.5 text-xs font-medium hover:bg-ink hover:text-paper"
                         >
                           Split into 2
@@ -94,6 +138,7 @@ export function ImportPicker({ result, onUse, onManual, onBack }: Props) {
               );
             })}
           </ul>
+          {shown.length === 0 && <p className="text-sm text-muted">Nothing matches &ldquo;{query.trim()}&rdquo;.</p>}
           <div className="sticky bottom-0 border-t border-rule bg-paper py-4">
             <button
               type="button"

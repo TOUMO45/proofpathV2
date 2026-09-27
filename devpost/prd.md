@@ -79,7 +79,8 @@ The clean rules apply to **every** requirement, whether it was generated, import
 Source: `scope.md > What "Working" Looks Like` (item 2), `scope.md > The POC Boundary`.
 
 Deliberately simple:
-- It reads bullet and checkbox items (`- [ ]`, `- `) from pasted markdown or an uploaded `.md` file as candidate requirements. Frontmatter and fenced code blocks are skipped.
+- It reads **checkbox items** (`- [ ]`, `- [x]`) from pasted markdown or an uploaded `.md` file as candidate requirements. An **Include plain bullets** toggle adds `- ` items. Frontmatter and fenced code blocks are skipped.
+- Each candidate shows the heading it came from, in small muted text, and a **filter box** narrows the list by text or heading.
 - It runs them through the same clean rules.
 - It lists **every** candidate it finds, flagged ones included. It doesn't just take the first 7.
 - The developer selects up to 7 of them for the contract.
@@ -90,7 +91,8 @@ Items that fail the clean rules are **flagged, never silently dropped or auto-sp
 
 This is the last build slice. If time runs short, it moves to Later.
 
-- [ ] Pasting this project's own `prd.md` lists all of its candidates, flagged ones included, and at most 7 can be selected.
+- [ ] Pasting this project's own `prd.md` with the default settings lists only its acceptance-criteria checkboxes, flagged ones included, and at most 7 can be selected.
+- [ ] The filter narrows the list.
 - [ ] Import → select → approve → paste an agent claim → Verify gives NOT PROVEN, naming the hypothetical wording.
 - [ ] An item like "- [ ] saves the file and shows a toast" appears with a "needs edit" badge and a Split into 2 suggestion. It can't be approved until it's fixed.
 - [ ] Pasted markdown with no bullet or checkbox items tells the developer that nothing was found, and falls back to manual entry.
@@ -247,7 +249,7 @@ Coverage starts at 25%. The Proof Gaps say exactly what to test. The developer a
 - **Contract reopened:** all verdicts are stale, and the clean rules apply again before re-approval.
 - **Superseded evidence:** visible and struck through, but it counts toward nothing. It's listed on the Proof Card.
 - **No evidence at Verify:** every requirement is NOT PROVEN, with a clear reason.
-- **Stale verdicts:** after evidence is added, superseded or removed, or the contract is reopened, verdicts are marked stale and must be verified again. Stale results never appear as current, and the Proof Card never shows from stale verdicts.
+- **Stale verdicts:** after evidence is added, superseded or removed, or the contract is reopened, verdicts are marked stale and must be verified again. Proof Gap cards stay visible while stale, dimmed and labeled "STALE: re-verify", with Record this test still working, so several gaps can be recorded before one Verify. Stale results never appear as current, and the Proof Card never shows from stale verdicts.
 - **Injection-like evidence:** an "untrusted, treated as data" badge. It contributes nothing.
 - **Obfuscated evidence** (invisible characters between letters, bidi controls, lookalike or fullwidth letters mixed into Latin words): an "obfuscated text detected" badge. The text is normalized before judging, and the verdict logic doesn't change; the badge is a visible warning.
 - **Conflicting evidence:** CONTRADICTED, naming both items.

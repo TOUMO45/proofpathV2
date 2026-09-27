@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { canSelect, importPlan, splitCandidate, toggleSelected } from "@/lib/import/plan";
+import { canSelect, filterCandidates, importPlan, splitCandidate, toggleSelected } from "@/lib/import/plan";
 import { makeRequirement } from "@/lib/contract/generate";
 import { approvalBlocker, initialState, reducer, type Action, type State } from "@/lib/store";
 
@@ -11,7 +11,34 @@ const run = (actions: Action[], start: State = initialState) => actions.reduce(r
 describe("plan import on this repo's own devpost/prd.md", () => {
   const result = importPlan(prd);
 
-  it("lists every bullet and checkbox candidate, more than the 7 that can be picked", () => {
+  it("by default lists only checkbox items: the acceptance criteria, still more than the 7 that can be picked", () => {
+    const checkboxLines = prd.split("\n").filter((l) => /^\s*[-*+]\s+\[[ xX]\]\s+/.test(l)).length;
+    expect(result.candidates.every((c) => c.checkbox)).toBe(true);
+    expect(result.candidates.length).toBeLessThanOrEqual(checkboxLines);
+    expect(result.candidates.length).toBeGreaterThan(checkboxLines - 3); // only exact duplicates are dropped
+    expect(result.skippedPlainBullets).toBeGreaterThan(50);
+    const all = importPlan(prd, { includePlainBullets: true });
+    expect(all.candidates.filter((c) => c.checkbox)).toHaveLength(result.candidates.length);
+    expect(all.candidates.some((c) => !c.checkbox)).toBe(true);
+  });
+
+  it("each candidate shows the heading it came from", () => {
+    const c = result.candidates.find((x) => x.text === "Evidence linked to no requirement can't be added")!;
+    expect(c.heading).toBe("Evidence");
+    expect(result.candidates.every((x) => x.heading.length > 0)).toBe(true);
+  });
+
+  it("the filter narrows the list by text or heading", () => {
+    const demo = filterCandidates(result.candidates, "demo");
+    expect(demo.length).toBeGreaterThan(0);
+    expect(demo.length).toBeLessThan(result.candidates.length);
+    expect(demo.every((c) => /demo/i.test(c.text) || /demo/i.test(c.heading))).toBe(true);
+    expect(filterCandidates(result.candidates, "proof card").some((c) => c.heading === "Proof Card")).toBe(true);
+    expect(filterCandidates(result.candidates, "   ")).toHaveLength(result.candidates.length);
+    expect(filterCandidates(result.candidates, "zzz-no-match")).toEqual([]);
+  });
+
+  it("lists the acceptance criteria, including a known one", () => {
     expect(result.title).toBe("ProofPath — Product Requirements");
     expect(result.candidates.length).toBeGreaterThan(7);
     expect(result.candidates.map((c) => c.text)).toContain(
@@ -33,7 +60,7 @@ describe("plan import on this repo's own devpost/prd.md", () => {
       expect(c.text).not.toMatch(/[,.;:\s]$/);
     }
     const spec = readFileSync(path.join(__dirname, "..", "devpost", "spec.md"), "utf8");
-    expect(importPlan(spec).candidates.some((c) => c.text.includes("├──"))).toBe(false);
+    expect(importPlan(spec, { includePlainBullets: true }).candidates.some((c) => c.text.includes("├──"))).toBe(false);
   });
 
   it("at most 7 can be selected; an 8th can't; deselecting always works", () => {
@@ -58,8 +85,14 @@ describe("plan import: edge cases and the flow into the contract", () => {
     expect(importPlan("# Notes\n\nJust prose, no list items.\n").candidates).toEqual([]);
   });
 
+  it("plain bullets only → no candidates by default, but they are counted and can be included", () => {
+    const md = "# Plan\n- The export button downloads a CSV file\n- The CSV file contains every visible row\n";
+    expect(importPlan(md)).toMatchObject({ candidates: [], skippedPlainBullets: 2 });
+    expect(importPlan(md, { includePlainBullets: true }).candidates).toHaveLength(2);
+  });
+
   it("removes exact duplicates", () => {
-    const r = importPlan("- [ ] The export button downloads a CSV file\n- The export button downloads a CSV file.\n");
+    const r = importPlan("- [ ] The export button downloads a CSV file\n- The export button downloads a CSV file.\n", { includePlainBullets: true });
     expect(r.candidates).toHaveLength(1);
   });
 

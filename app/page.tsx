@@ -14,8 +14,7 @@ import { ProofCard } from "@/components/ProofCard";
 import { ProofGraph } from "@/components/ProofGraph";
 import { WorkspaceTopBar } from "@/components/WorkspaceTopBar";
 import { generateContract, makeRequirement } from "@/lib/contract/generate";
-import { importPlan, type ImportResult } from "@/lib/import/plan";
-import { buildGaps, recordPrefill, type RecordPrefill } from "@/lib/gap";
+import { gapsForDisplay, recordPrefill, type RecordPrefill } from "@/lib/gap";
 import { buildProofCard } from "@/lib/proofcard";
 import { hasCurrentVerdicts, initialState, loadSaved, reducer, save } from "@/lib/store";
 import { coverage } from "@/lib/verify";
@@ -33,7 +32,7 @@ export default function Home() {
   // "Record this test": which gap the evidence form is pre-filled for. The
   // counter remounts the form so each click starts from a fresh pre-fill.
   const [record, setRecord] = useState<{ prefill: RecordPrefill; n: number } | null>(null);
-  const [imported, setImported] = useState<ImportResult | null>(null);
+  const [imported, setImported] = useState<string | null>(null); // pasted plan markdown
   useEffect(() => {
     const { session, notice } = loadSaved(browserStorage());
     dispatch({ type: "hydrate", session, notice });
@@ -49,7 +48,7 @@ export default function Home() {
   if (!session && imported) {
     return (
       <ImportPicker
-        result={imported}
+        markdown={imported}
         onBack={() => setImported(null)}
         onUse={(goal, texts) => {
           const requirements = texts.map((t, i) => makeRequirement(`R${i + 1}`, t));
@@ -76,7 +75,7 @@ export default function Home() {
         }}
         onImport={(markdown) => {
           if (!markdown.trim()) return "Paste a plan or upload a .md file first.";
-          setImported(importPlan(markdown));
+          setImported(markdown);
           return null;
         }}
         notice={state.notice}
@@ -90,7 +89,7 @@ export default function Home() {
   const current = hasCurrentVerdicts(session);
   const pct = current ? coverage(session.verdicts) : null;
   const proven = current ? session.verdicts.filter((v) => v.status === "PROVEN").length : 0;
-  const gaps = current ? buildGaps(session.contract, session.verdicts) : [];
+  const { gaps, stale: gapsStale } = gapsForDisplay(session);
   const proofCard = buildProofCard(session);
 
   return (
@@ -124,12 +123,13 @@ export default function Home() {
           {gaps.length > 0 && (
             <section aria-labelledby="gaps-label" className="space-y-3">
               <h2 id="gaps-label" className="label">
-                Proof gaps · {gaps.length} open
+                Proof gaps · {gaps.length} open{gapsStale ? " at the last Verify" : ""}
               </h2>
               {gaps.map((g) => (
                 <ProofGapCard
                   key={g.requirementId}
                   gap={g}
+                  stale={gapsStale}
                   onRecord={() => {
                     setRecord((prev) => ({ prefill: recordPrefill(g, session), n: (prev?.n ?? 0) + 1 }));
                     requestAnimationFrame(() => {

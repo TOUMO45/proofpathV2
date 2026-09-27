@@ -77,7 +77,7 @@ From `prd.md > Look and Feel` and `scope.md > Inspiration & Identity`.
 
 ### Contract Generator (`lib/contract`)
 - Splits a goal into sentences (`;`, `.`), then into behaviors at "that/which" (a relative clause on a subject) and at ", " / "and" wherever the next word is a verb. "Name, email and message fields" stays one list. A condition ("after page reload", "without crashing") stays attached to its behavior rather than becoming a requirement of its own. Trailing punctuation is trimmed.
-- Classifies each clause (e.g. visible, rejects, succeeds, shows, persists) and attaches an **expected outcome** (see Decisions) and an "evidence that would prove it" template.
+- Classifies each clause (e.g. visible, rejects, succeeds, shows, persists; a noun phrase with no finite verb, like "The coverage meter", is `displays`) and attaches an **expected outcome** (see Decisions) and an "evidence that would prove it" template.
 - Target words skip failure words (crash, error, fail, timeout…), because they describe what must *not* happen: as targets, "no crash" in good evidence would read as a negated target.
 - Returns 0–7 draft requirements (R1…R7). Too-short goals return an error; fewer than 3 triggers the low-confidence warning in the UI.
 
@@ -94,8 +94,8 @@ PRD ref: `prd.md > Goal to Contract`.
 PRD ref: `prd.md > Goal to Contract`, `prd.md > Contract Review`.
 
 ### Plan Importer (`lib/import`)
-`importPlan(markdown)`:
-- Collects every line matching `- [ ] …`, `- [x] …`, `- …` or `* …`.
+`importPlan(markdown, { includePlainBullets })`:
+- Collects checkbox lines (`- [ ] …`, `- [x] …`) by default, and plain bullets (`- …`, `* …`) only with `includePlainBullets`. Each candidate keeps the nearest heading above it. `filterCandidates` matches text or heading.
 - Strips the markers and inline markdown.
 - Removes exact duplicates and runs `checkClean` on each.
 - Returns all candidates with their flags.

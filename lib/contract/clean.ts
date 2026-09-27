@@ -51,6 +51,19 @@ function isVerb(word: string | undefined): boolean {
   return word !== undefined && BEHAVIOR_VERBS.has(word.toLowerCase());
 }
 
+const AUXILIARY = new Set(
+  "is are was were be been can can't cannot must should will won't does doesn't do don't has have had isn't aren't wasn't".split(" "),
+);
+
+/**
+ * True if the text states something happening: an auxiliary ("is", "can't") or
+ * a third-person verb ("shows", "converts"). Base forms inside names don't
+ * count, so "A Try the demo button" and "A Create Proof Plan button" have no verb.
+ */
+export function hasFiniteVerb(text: string): boolean {
+  return tokenize(text).some((w) => AUXILIARY.has(w) || (w.endsWith("s") && isVerb(w)));
+}
+
 /** True if the text starts with a verb, i.e. it begins a new behavior ("shows a toast"). */
 export function startsWithVerb(text: string): boolean {
   return isVerb(tokenize(text)[0]);

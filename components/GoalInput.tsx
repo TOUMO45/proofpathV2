@@ -103,7 +103,7 @@ export function GoalInput({ onTryDemo, onCreate, onImport, notice, onDismissNoti
           Or paste a plan (.md)
         </h2>
         <p className="mt-1 text-sm text-muted">
-          A PRD, spec or checklist. Every bullet and checkbox item becomes a candidate you can pick.
+          A PRD, spec or checklist. Its checkbox items become candidates you can pick; plain bullets are optional.
         </p>
         <form
           className="mt-3 space-y-3"

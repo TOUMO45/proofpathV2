@@ -2,14 +2,20 @@ import type { ProofGap } from "@/lib/gap";
 import { RichText } from "./RichText";
 import { VerdictBadge } from "./VerdictBadge";
 
-export function ProofGapCard({ gap, onRecord }: { gap: ProofGap; onRecord?: () => void }) {
+export function ProofGapCard({ gap, onRecord, stale = false }: { gap: ProofGap; onRecord?: () => void; stale?: boolean }) {
   return (
-    <article className="border border-rule border-l-4 border-l-notproven bg-sheet p-5" data-testid={`gap-${gap.requirementId}`}>
+    <article
+      className={`border border-rule border-l-4 bg-sheet p-5 ${stale ? "border-l-muted" : "border-l-notproven"}`}
+      data-testid={`gap-${gap.requirementId}`}
+      data-stale={stale || undefined}
+    >
       <header className="flex flex-wrap items-center gap-2">
         <span className="label">Proof gap</span>
         <span className="font-mono text-xs text-muted">{gap.requirementId}</span>
-        <VerdictBadge status={gap.status} />
+        <VerdictBadge status={stale ? "STALE" : gap.status} />
+        {stale && <span className="font-mono text-[11px] font-semibold tracking-wider text-muted">STALE: re-verify</span>}
       </header>
+      <div className={stale ? "opacity-60" : undefined}>
       <p className="mt-2 font-medium">{gap.requirementText}</p>
       <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-[7rem_1fr]">
         <dt className="label text-xs">Next test</dt>
@@ -32,6 +38,7 @@ export function ProofGapCard({ gap, onRecord }: { gap: ProofGap; onRecord?: () =
           <RichText text={gap.why} />
         </dd>
       </dl>
+      </div>
       {onRecord && (
         <button
           type="button"

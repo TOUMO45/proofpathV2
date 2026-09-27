@@ -79,3 +79,13 @@ export function buildGaps(contract: Contract, verdicts: Verdict[]): ProofGap[] {
   }
   return gaps;
 }
+
+/**
+ * The gaps to show in the Workspace. While verdicts are stale they are still
+ * shown, dimmed and labeled "STALE: re-verify" (never as current), so several
+ * gaps can be recorded before one Verify.
+ */
+export function gapsForDisplay(session: Session): { gaps: ProofGap[]; stale: boolean } {
+  if (session.verdicts.length === 0) return { gaps: [], stale: false };
+  return { gaps: buildGaps(session.contract, session.verdicts), stale: session.stale };
+}
