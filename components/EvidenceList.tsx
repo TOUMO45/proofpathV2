@@ -18,7 +18,7 @@ function Field({ name, value }: { name: string; value: string }) {
   );
 }
 
-export function EvidenceList({ evidence }: { evidence: Evidence[] }) {
+export function EvidenceList({ evidence, onRemove }: { evidence: Evidence[]; onRemove?: (id: string) => void }) {
   const superseded = supersededIds(evidence);
   const supersededBy = new Map(evidence.filter((e) => e.supersedes).map((e) => [e.supersedes!, e.id]));
   if (evidence.length === 0) return <p className="text-sm text-muted">No evidence yet.</p>;
@@ -30,7 +30,16 @@ export function EvidenceList({ evidence }: { evidence: Evidence[] }) {
           <li key={e.id} className="border border-rule bg-sheet p-3" data-testid={`evidence-${e.id}`}>
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-mono text-sm font-semibold">{e.id}</span>
-              <span className="text-xs text-muted">{e.kind === "structured" ? "structured test" : "text"}</span>
+              {e.kind === "claim" ? (
+                <span
+                  className="border border-ink px-1 font-mono text-[10px] font-semibold tracking-wider"
+                  title="An AI agent's own completion message: a claim, not an observation."
+                >
+                  AGENT CLAIM
+                </span>
+              ) : (
+                <span className="text-xs text-muted">{e.kind === "structured" ? "structured test" : "text"}</span>
+              )}
               <span className="text-xs text-muted">
                 → <span className="font-mono">{e.links.join(", ")}</span>
               </span>
@@ -44,6 +53,16 @@ export function EvidenceList({ evidence }: { evidence: Evidence[] }) {
                   {FLAG_LABEL[f]?.text ?? f.toUpperCase()}
                 </span>
               ))}
+              {onRemove && (
+                <button
+                  type="button"
+                  onClick={() => onRemove(e.id)}
+                  className="ml-auto text-xs text-muted underline underline-offset-2 hover:text-contradicted"
+                  aria-label={`Remove ${e.id}`}
+                >
+                  Remove
+                </button>
+              )}
             </div>
             <div className={`mt-2 space-y-1 ${isSuperseded ? "text-muted line-through" : ""}`}>
               {e.kind === "structured" && e.structured ? (

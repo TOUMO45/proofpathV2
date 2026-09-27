@@ -48,7 +48,7 @@ Build mode: fast (chosen in `4-spec`: verification and a commit for every slice,
   Learner check: Run `npm run dev`, open http://localhost:3000, press **Try the demo**, then **Verify**. Read each verdict's reason and Proof Gap. Does it look like an audit report, and does each reason tell you exactly why?
   Commit: `Show demo workspace with verdicts, coverage and Proof Gaps`
 
-- [ ] **3. Close the gaps: add evidence, supersede the failure, get the Proof Card**
+- [x] **3. Close the gaps: add evidence, supersede the failure, get the Proof Card**
   Becomes usable: In the demo you add text or structured evidence linked explicitly to requirements, mark a retest as "Supersedes E3", or remove evidence. Verdicts go stale until you verify again. At 100%, the Proof Card appears, with **Copy as Markdown** and **Download .md**, and it lists E3 as superseded.
   Why now: It completes the whole core loop on the demo, which is the full "oh, that's cool" beat, before any new input path is added.
   PRD ref: `prd.md > Evidence`, `prd.md > Proof Card`, `prd.md > Built-in Demo`, `prd.md > States and Boundaries`
@@ -108,7 +108,7 @@ Build mode: fast (chosen in `4-spec`: verification and a commit for every slice,
 
 ## Hands-on Checkpoints
 
-- [ ] Early usable behavior explored — after slice 2 (demo workspace, look and feel, verdict and reason display)
+- [x] Early usable behavior explored — after slice 2 (demo workspace, look and feel, verdict and reason display). Feedback: keep the audit-report look, the reasons and the quoted evidence. Add an "Agent claim" evidence kind and "self-reported" labels on the Proof Card, both folded into slice 3.
 - [ ] Final kick-the-tires exploration and feedback completed
 
 ## Final Review
@@ -141,3 +141,6 @@ Activity mode:
 - Special characters in source and tests are written as code points (`String.fromCodePoint(0x200b)`), never as raw characters, so no invisible or lookalike character hides in the repo.
 - `next.config.mjs` sets `agentRules: false`: Next 16's `next dev` otherwise writes `AGENTS.md` and `CLAUDE.md` into the repo root.
 - The store's `hydrated` flag lives in the reducer (not `useState`), because the React lint rule forbids calling `setState` inside an effect.
+- An "Agent claim" evidence kind was added at the checkpoint-1 feedback and folded into slice 3. It's judged exactly like text and labeled AGENT CLAIM. When evidence has several hypothetical sentences, the reason now quotes the one most about the requirement ("should" for R2, "will" for R4), not the first. `prd.md > Evidence` and `spec.md > Data Model` are updated.
+- The Proof Card labels every proving item "self-reported" or "agent claim" and ends with "ProofPath did not run any test itself" (checkpoint-1 feedback). `prd.md > Proof Card` is updated.
+- Copy as Markdown falls back to copying a selected off-screen textarea when the Clipboard API is denied. The desktop app's browser pane refused `navigator.clipboard.writeText` ("Write permission denied"), and the fallback copy was verified there.

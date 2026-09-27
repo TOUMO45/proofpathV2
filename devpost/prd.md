@@ -117,9 +117,10 @@ Source: `scope.md > The Core Loop`.
 ### Evidence
 Source: `scope.md > What "Working" Looks Like` (item 3).
 
-There are two kinds of evidence:
+There are three kinds of evidence:
 - **Text:** a free-form observation.
 - **Structured test:** three fields, **Input / Action / Observed**.
+- **Agent claim:** an AI agent's own "done" message, pasted as-is. The verifier treats it exactly like text (no special rules), so the hypothetical, vague and injection screens do the work. The UI labels it **AGENT CLAIM**, so the viewer sees it's the agent talking, not an observation.
 
 Each item gets an ID (E1, E2, …).
 - **Linking:** one item can link to several requirements, because real observations often cover several things. The developer always sets links explicitly; ProofPath never links automatically.
@@ -131,6 +132,7 @@ Each item gets an ID (E1, E2, …).
 - **Staleness:** adding, superseding or removing evidence makes the current verdicts stale.
 
 - [ ] Evidence linked to no requirement can't be added.
+- [ ] Pasting "I've implemented validation that should reject invalid emails. The form will now show a confirmation." as an agent claim linked to R2 and R4 gives both NOT PROVEN, with reasons naming "should" and "will".
 - [ ] One evidence item can be linked to two requirements and appears under both in the Proof Graph.
 - [ ] "Supersedes" only offers evidence that shares at least one linked requirement with the new item.
 - [ ] A superseded item stays visible, struck through, and contributes nothing to any verdict.
@@ -181,6 +183,7 @@ The Proof Card is shown on screen when coverage reaches 100%. It contains:
 - the evidence count
 - the date
 - any superseded items, e.g. "E3 (500 error on submit) superseded by E4 retest", so a past failure is never hidden
+- next to each proving evidence ID, where it came from: "self-reported" (typed by the developer) or "agent claim", so the card never implies ProofPath tested anything itself
 
 It says "verified by ProofPath rules" and nothing more. It isn't a certificate and makes no security claim.
 

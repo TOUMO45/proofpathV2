@@ -23,17 +23,22 @@ export const StructuredSchema = z.object({
 });
 export type Structured = z.infer<typeof StructuredSchema>;
 
+// "claim" is an AI agent's own completion message, pasted as-is. The verifier
+// treats it exactly like text; the UI labels it AGENT CLAIM.
+export const EvidenceKindSchema = z.enum(["text", "structured", "claim"]);
+export type EvidenceKind = z.infer<typeof EvidenceKindSchema>;
+
 export const EvidenceSchema = z
   .object({
     id: z.string().regex(/^E\d+$/),
-    kind: z.enum(["text", "structured"]),
+    kind: EvidenceKindSchema,
     text: z.string().optional(),
     structured: StructuredSchema.optional(),
     links: z.array(z.string()).min(1, "Evidence must be linked to at least one requirement"),
     supersedes: z.string().optional(),
     flags: z.array(z.string()),
   })
-  .refine((e) => (e.kind === "text" ? typeof e.text === "string" : e.structured !== undefined), {
+  .refine((e) => (e.kind === "structured" ? e.structured !== undefined : typeof e.text === "string"), {
     message: "Evidence body does not match its kind",
   });
 export type Evidence = z.infer<typeof EvidenceSchema>;

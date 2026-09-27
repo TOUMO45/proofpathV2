@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { RESET_NOTICE, STORAGE_KEY, hasCurrentVerdicts, initialState, loadSaved, reducer, save } from "@/lib/store";
-import { demoSession } from "@/lib/fixtures/demo";
+import {
+  RESET_NOTICE,
+  STORAGE_KEY,
+  hasCurrentVerdicts,
+  initialState,
+  loadSaved,
+  reducer,
+  save,
+  supersedableEvidence,
+  validateDraft,
+} from "@/lib/store";
+import { demoFixEvidence, demoSession } from "@/lib/fixtures/demo";
 
 function memoryStorage(initial: Record<string, string> = {}) {
   const data = new Map(Object.entries(initial));
@@ -75,5 +85,59 @@ describe("saved session", () => {
     save(storage, demoSession());
     save(storage, reducer(initialState, { type: "reset" }).session);
     expect(storage.data.has(STORAGE_KEY)).toBe(false);
+  });
+});
+
+describe("adding, removing and superseding evidence", () => {
+  const verifiedDemo = () => reducer(reducer(initialState, { type: "loadDemo" }), { type: "verify" });
+  const observedR4 = { kind: "structured" as const, structured: { input: "valid", action: "Submitted the form", observed: "Confirmation message 'Thanks' shown" }, links: ["R4"] };
+
+  it("adding evidence assigns the next ID, computes flags and makes verdicts stale", () => {
+    const s = reducer(verifiedDemo(), { type: "addEvidence", draft: observedR4 }).session!;
+    expect(s.evidence.at(-1)!.id).toBe("E4");
+    expect(s.evidence.at(-1)!.flags).toEqual([]);
+    expect(s.stale).toBe(true);
+    expect(hasCurrentVerdicts(s)).toBe(false);
+  });
+
+  it("removing evidence makes verdicts stale", () => {
+    const s = reducer(verifiedDemo(), { type: "removeEvidence", id: "E2" }).session!;
+    expect(s.evidence.map((e) => e.id)).toEqual(["E1", "E3"]);
+    expect(s.stale).toBe(true);
+  });
+
+  it("IDs are never reused after a removal", () => {
+    let st = reducer(verifiedDemo(), { type: "addEvidence", draft: observedR4 }); // E4
+    st = reducer(st, { type: "removeEvidence", id: "E4" });
+    st = reducer(st, { type: "addEvidence", draft: observedR4 });
+    expect(st.session!.evidence.at(-1)!.id).toBe("E5");
+  });
+
+  it("supersede is only allowed for evidence sharing a linked requirement", () => {
+    const s = verifiedDemo().session!;
+    expect(supersedableEvidence(s, ["R3"]).map((e) => e.id)).toEqual(["E3"]);
+    expect(validateDraft(s, { ...observedR4, supersedes: "E3" })).toMatch(/shares a linked requirement/);
+    expect(validateDraft(s, { ...observedR4, links: ["R3", "R4"], supersedes: "E3" })).toBeNull();
+  });
+
+  it("an invalid draft is ignored by the reducer", () => {
+    const before = verifiedDemo();
+    expect(reducer(before, { type: "addEvidence", draft: { ...observedR4, links: [] } })).toBe(before);
+    expect(reducer(before, { type: "addEvidence", draft: { kind: "claim", text: "  ", links: ["R2"] } })).toBe(before);
+  });
+
+  it("already-superseded evidence can't be superseded again", () => {
+    let st = reducer(verifiedDemo(), { type: "addEvidence", draft: { ...observedR4, links: ["R3"], supersedes: "E3" } });
+    expect(supersedableEvidence(st.session!, ["R3"]).map((e) => e.id)).toEqual(["E4"]);
+    st = reducer(st, { type: "addEvidence", draft: { ...observedR4, links: ["R3"], supersedes: "E3" } });
+    expect(st.session!.evidence).toHaveLength(4);
+  });
+
+  it("the demo reaches 100% through the reducer: R2 and R4 evidence, plus a retest superseding E3", () => {
+    let st = verifiedDemo();
+    st = reducer(st, { type: "addEvidence", draft: { kind: "structured", structured: demoFixEvidence[0].structured!, links: ["R2"] } });
+    st = reducer(st, { type: "addEvidence", draft: { kind: "structured", structured: demoFixEvidence[1].structured!, links: ["R3", "R4"], supersedes: "E3" } });
+    st = reducer(st, { type: "verify" });
+    expect(st.session!.verdicts.map((v) => v.status)).toEqual(["PROVEN", "PROVEN", "PROVEN", "PROVEN"]);
   });
 });

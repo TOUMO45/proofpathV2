@@ -5,7 +5,7 @@ import type { Evidence, ExpectedOutcome, Requirement } from "../types";
 import { matchedTargets, parseEvidence, quoteBest, stripWrappingQuotes, wordsMatch } from "../text";
 import {
   findErrorSignals,
-  findHypothetical,
+  findHypotheticals,
   findInjection,
   findNegatedTarget,
   findVaguePhrase,
@@ -61,8 +61,15 @@ export function stance(req: Requirement, evidence: Evidence, linked: Requirement
   // what was observed. Input/Action describe the test setup.
   const wordingText = parsed.labeled ? parsed.observed : parsed.all;
 
-  // 2. Hypothetical / modal wording.
-  const hypothetical = findHypothetical(wordingText);
+  // 2. Hypothetical / modal wording. With several such sentences, cite the one
+  // most about this requirement ("should reject invalid emails" for R2,
+  // "will now show a confirmation" for R4); ties go to the first.
+  const hypotheticals = findHypotheticals(wordingText);
+  const hypothetical = hypotheticals.reduce<(typeof hypotheticals)[number] | null>(
+    (best, h) =>
+      !best || matchedTargets(h.sentence, req.targets).length > matchedTargets(best.sentence, req.targets).length ? h : best,
+    null,
+  );
   if (hypothetical) {
     return {
       kind: "neutral",

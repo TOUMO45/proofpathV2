@@ -6,14 +6,23 @@ import { contentWords, normalize, splitSentences, tokenize } from "../text";
 
 export type Hit = { match: string; sentence: string };
 
-function firstHit(text: string, patterns: RegExp[]): Hit | null {
+/** The first matching pattern in each sentence, in sentence order. */
+function allHits(text: string, patterns: RegExp[]): Hit[] {
+  const hits: Hit[] = [];
   for (const sentence of splitSentences(text)) {
     for (const p of patterns) {
       const m = sentence.match(p);
-      if (m) return { match: m[0], sentence };
+      if (m) {
+        hits.push({ match: m[0], sentence });
+        break;
+      }
     }
   }
-  return null;
+  return hits;
+}
+
+function firstHit(text: string, patterns: RegExp[]): Hit | null {
+  return allHits(text, patterns)[0] ?? null;
 }
 
 // 1. Injection: instructions aimed at the verifier. Reads every field.
@@ -51,8 +60,9 @@ export function withoutQuotes(text: string): string {
     .replace(/(^|[^A-Za-z])'([^']{2,}?)'(?![A-Za-z])/g, "$1QUOTED");
 }
 
-export function findHypothetical(text: string): Hit | null {
-  return firstHit(withoutQuotes(text), HYPOTHETICAL);
+/** Every sentence with hypothetical wording (the stance picks the one about its requirement). */
+export function findHypotheticals(text: string): Hit[] {
+  return allHits(withoutQuotes(text), HYPOTHETICAL);
 }
 
 // 3. Vague approval.

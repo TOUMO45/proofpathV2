@@ -4,12 +4,15 @@
 
 import { useEffect, useReducer } from "react";
 import { CoverageBar } from "@/components/CoverageBar";
+import { EvidenceForm } from "@/components/EvidenceForm";
 import { EvidenceList } from "@/components/EvidenceList";
 import { GoalInput } from "@/components/GoalInput";
 import { ProofGapCard } from "@/components/ProofGapCard";
+import { ProofCard } from "@/components/ProofCard";
 import { ProofGraph } from "@/components/ProofGraph";
 import { WorkspaceTopBar } from "@/components/WorkspaceTopBar";
 import { buildGaps } from "@/lib/gap";
+import { buildProofCard } from "@/lib/proofcard";
 import { hasCurrentVerdicts, initialState, loadSaved, reducer, save } from "@/lib/store";
 import { coverage } from "@/lib/verify";
 
@@ -49,6 +52,7 @@ export default function Home() {
   const pct = current ? coverage(session.verdicts) : null;
   const proven = current ? session.verdicts.filter((v) => v.status === "PROVEN").length : 0;
   const gaps = current ? buildGaps(session.contract, session.verdicts) : [];
+  const proofCard = buildProofCard(session);
 
   return (
     <div className="min-h-screen">
@@ -60,6 +64,7 @@ export default function Home() {
       />
       <main className="mx-auto grid max-w-6xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0 space-y-6">
+          {proofCard && <ProofCard markdown={proofCard} />}
           <CoverageBar
             proven={proven}
             total={session.contract.requirements.length}
@@ -97,7 +102,8 @@ export default function Home() {
           <h2 id="evidence-label" className="label">
             Evidence · {session.evidence.length}
           </h2>
-          <EvidenceList evidence={session.evidence} />
+          <EvidenceList evidence={session.evidence} onRemove={(id) => dispatch({ type: "removeEvidence", id })} />
+          <EvidenceForm session={session} onAdd={(draft) => dispatch({ type: "addEvidence", draft })} />
         </aside>
       </main>
     </div>

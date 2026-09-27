@@ -167,7 +167,7 @@ PRD ref: `prd.md > States and Boundaries`, `prd.md > Evidence`, `prd.md > Contra
 - **`ImportPicker`:** the candidate list with flags, selecting up to 7.
 - **`ContractReview`:** edit, add, remove, flags, Split into 2, Approve. It shows each requirement's editable `expected` outcome and its target words, so you can see why a verdict lands the way it does.
 - **`WorkspaceTopBar`:** the steps plus the coverage meter, with a Demo label when a demo is loaded.
-- **`EvidenceForm`:** text or structured input, link checkboxes, and an optional Supersedes select.
+- **`EvidenceForm`:** structured test, text or agent claim input, link checkboxes, and an optional Supersedes select.
 - **`EvidenceList`:** superseded items struck through, an untrusted badge, and an "obfuscated text detected" badge.
 - **`ProofGraph`:** Goal → Requirements → Evidence → Verdict, as plain HTML/CSS columns with connector lines. No graph library.
 - **`CoverageBar`**, **`ProofGapCard`**, **`ProofCard`** (Copy / Download).
@@ -202,7 +202,7 @@ type Requirement = {
 
 type Evidence = {
   id: string;            // E1, E2…, never reused
-  kind: 'text' | 'structured';
+  kind: 'text' | 'structured' | 'claim'; // claim = an agent's pasted message, judged exactly like text
   text?: string;
   structured?: { input: string; action: string; observed: string };
   links: string[];       // requirement IDs, at least 1, always set explicitly
