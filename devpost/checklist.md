@@ -9,7 +9,7 @@ Build mode: fast (chosen in `4-spec`: verification and a commit for every slice,
 
 ## Slices
 
-- [ ] **1. The verifier refuses every known bluff, proven by tests**
+- [x] **1. The verifier refuses every known bluff, proven by tests**
   Becomes usable: `npm test` runs the adversarial suite against the real verifier, and `npm run demo:verify` prints the demo contract's verdict table (R1 PROVEN, R2 NOT PROVEN for hypothetical wording, R3 CONTRADICTED on a 500, R4 NOT PROVEN, coverage 25%). There's no UI yet.
   Why now: The verifier is the kernel and the riskiest part (v1 failed exactly here). This is the one layer-only slice: it independently proves the critical risk and leaves runnable evidence. Bootstrapping happens inside it, so every later slice lands in a working, tested project.
   PRD ref: `prd.md > Verification`, `prd.md > Built-in Demo`, `prd.md > Coverage and Proof Graph`
@@ -127,3 +127,10 @@ Reflection:
 Activity mode:
 
 ## Revisions
+
+- Support also requires the observation to show the requirement's `expected` outcome (e.g. `succeeds` needs "submitted/completed/Thanks/200…", `displays` needs "visible/shown/…" or quoted text), not just target-word overlap plus a concrete observation. This is `prd.md > Verification`'s "matches that requirement's success condition" made mechanical. Without it, a structured test whose Action matched the targets but whose Observed said only "page loaded" would be PROVEN.
+- For `rejects` requirements, a non-negated "accepted/submitted/successfully" in the observation is a contradiction. The spec's contradiction rules had no way to catch "the invalid email was accepted and submitted successfully".
+- A negated *outcome word* also contradicts ("fields are not visible" on a `displays` requirement), not only a negated target word. A requirement's target words are nouns, so "not visible" slipped through.
+- When one evidence item is linked to several requirements, an error sentence only counts against the requirement it's about. That's decided by target words in the sentence, then in Input/Action, and otherwise it counts against all of them. This implements `prd.md > Verification` ("an item only contradicts a requirement if what it observed contradicts THAT requirement's success condition").
+- Quoted app text ("'We'll reply soon' shown") is ignored by the hypothetical and vague screens: it's what the app displayed, not the tester's wording.
+- Toolchain: ESLint is pinned to 9, because `eslint-config-next` 16's bundled React plugins crash on ESLint 10. TypeScript is 6.0, because `typescript-eslint` doesn't support TypeScript 7 yet. The Vitest config is `.mts`.
