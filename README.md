@@ -61,10 +61,11 @@ It also avoids false verdicts on *good* evidence: "should" in a test's Action (t
 
 ## How it works
 
-Four pure functions (no DOM, no network), and screens that only display what they return:
+Pure functions (no DOM, no network), and screens that only display what they return:
 
 ```
-goal ──► contract generator ──► clean checker ──► Contract Review (you edit, then approve)
+goal ──────► contract generator ─┐
+plan (.md) ► plan importer ──────┴─► clean checker ──► Contract Review (you edit, then approve)
                                                         │
 evidence (structured test / text / agent claim) ────────┤ linked explicitly to requirements
                                                         ▼
@@ -77,6 +78,9 @@ evidence (structured test / text / agent claim) ────────┤ link
 ```
 
 - `lib/verify/`: the screens (`screens.ts`), one evidence item against one requirement (`stance.ts`), and aggregation (`index.ts`).
+- `lib/contract/`: goal → draft requirements (`generate.ts`) and the clean rules with Split into 2 (`clean.ts`).
+- `lib/import/plan.ts`: markdown → every bullet/checkbox as a flagged candidate.
+- `lib/hints.ts`, `lib/gap.ts`: Proof Gaps, Record this test, and the link and retest hints. They only suggest.
 - `lib/text.ts`: normalization (NFKC, invisible characters, lookalike letters), tokenizing and quoting.
 - `lib/store.ts`: one reducer with a `stale` flag. Any change to evidence makes verdicts stale, and the Proof Card only renders from current verdicts. The session is kept in `localStorage` and validated with Zod on load.
 - `lib/fixtures/demo.ts`: the demo contract and evidence. It is fixture data and labeled as such in the UI.
