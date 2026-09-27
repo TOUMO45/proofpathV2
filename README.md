@@ -90,6 +90,8 @@ npm run mutation     # mutation check (see above)
 
 ## Planning docs
 
+Rebuilt from scratch with the Devpost Learn skill pack after an unplanned v1 prototype ([archived](https://github.com/TOUMO45/proofpath)).
+
 This project was planned before it was built, using the Devpost Learn "Build With AI: Basics" skill pack (in [`.agents/skills`](.agents/skills)). The planning documents are in [`devpost/`](devpost): [`scope.md`](devpost/scope.md), [`prd.md`](devpost/prd.md), [`spec.md`](devpost/spec.md), and the build [`checklist.md`](devpost/checklist.md). The checklist's **Revisions** section records every place the build contradicted the plan, and why.
 
 ## Limitations
