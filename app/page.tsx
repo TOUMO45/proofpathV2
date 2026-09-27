@@ -144,11 +144,11 @@ export default function Home() {
           )}
         </div>
         <aside className="min-w-0 space-y-4 lg:sticky lg:top-6 lg:self-start" aria-labelledby="evidence-label">
-          <div className="border border-rule bg-sheet p-4">
+          <div className="card p-4">
             <button
               type="button"
               onClick={() => dispatch({ type: "verify" })}
-              className="w-full bg-accent px-4 py-3 font-medium text-white hover:bg-accent/90"
+              className="w-full btn btn-primary px-4 py-3"
             >
               Verify
             </button>

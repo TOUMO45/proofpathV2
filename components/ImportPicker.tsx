@@ -65,7 +65,7 @@ export function ImportPicker({ markdown, onUse, onManual, onBack }: Props) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="e.g. demo, Proof Card, stale"
-              className="w-full min-w-0 border border-rule bg-sheet px-2 py-1.5 focus:border-accent"
+              className="w-full min-w-0 border border-rule bg-sheet px-2 py-1.5 focus:border-accent rounded-xl"
               data-testid="candidate-filter"
             />
           </label>
@@ -73,7 +73,7 @@ export function ImportPicker({ markdown, onUse, onManual, onBack }: Props) {
       </div>
 
       {candidates.length === 0 ? (
-        <div role="status" className="border border-notproven bg-sheet p-4">
+        <div role="status" className="card border-notproven p-4">
           <p className="font-medium">{includePlain || result.skippedPlainBullets === 0 ? "No bullet or checkbox items found." : "No checkbox items found."}</p>
           <p className="mt-1 text-sm text-muted">
             {!includePlain && result.skippedPlainBullets > 0
@@ -83,7 +83,7 @@ export function ImportPicker({ markdown, onUse, onManual, onBack }: Props) {
           <button
             type="button"
             onClick={() => onManual(goal)}
-            className="mt-3 border border-ink px-3 py-2 text-sm font-medium hover:bg-ink hover:text-paper"
+            className="mt-3 btn btn-secondary px-3 py-2 text-sm"
           >
             Enter requirements manually
           </button>
@@ -101,7 +101,7 @@ export function ImportPicker({ markdown, onUse, onManual, onBack }: Props) {
               return (
                 <li
                   key={c.id}
-                  className={`border bg-sheet p-3 ${c.flags.length ? "border-l-4 border-rule border-l-contradicted" : "border-rule"}`}
+                  className={`card p-3 ${c.flags.length ? "border-l-4 !border-l-contradicted" : ""}`}
                   data-testid={`candidate-${c.id}`}
                 >
                   <label className={`flex items-start gap-2 ${disabled ? "text-muted" : ""}`}>
@@ -119,7 +119,7 @@ export function ImportPicker({ markdown, onUse, onManual, onBack }: Props) {
                   </label>
                   {c.flags.length > 0 && (
                     <div className="mt-2 ml-6 flex flex-wrap items-center gap-2 text-sm">
-                      <span className="border border-contradicted px-1 font-mono text-[10px] font-semibold tracking-wider text-contradicted">
+                      <span className="rounded-full border border-contradicted bg-contradicted-tint px-2 font-mono text-[10px] font-semibold tracking-wider text-contradicted">
                         NEEDS EDIT
                       </span>
                       <span className="text-contradicted">{c.flags.join(" · ")}</span>
@@ -127,7 +127,7 @@ export function ImportPicker({ markdown, onUse, onManual, onBack }: Props) {
                         <button
                           type="button"
                           onClick={() => update({ candidates: splitCandidate(candidates, c.id), selected: selected.filter((x) => x !== c.id) })}
-                          className="border border-ink px-2 py-0.5 text-xs font-medium hover:bg-ink hover:text-paper"
+                          className="btn btn-secondary px-2 py-0.5 text-xs"
                         >
                           Split into 2
                         </button>
@@ -144,7 +144,7 @@ export function ImportPicker({ markdown, onUse, onManual, onBack }: Props) {
               type="button"
               disabled={selected.length === 0}
               onClick={() => onUse(goal, candidates.filter((c) => selected.includes(c.id)).map((c) => c.text))}
-              className="bg-accent px-5 py-3 font-medium text-white hover:bg-accent/90 disabled:bg-rule disabled:text-muted"
+              className="btn btn-primary px-5 py-3"
             >
               Review {selected.length || ""} selected
             </button>

@@ -1,17 +1,23 @@
 @import "tailwindcss";
 
-/* spec.md > Look and Feel: paper, ink, one blue accent, verdict colors that
-   each reach at least 4.5:1 on paper and always come with a text label. */
+/* Look: pale lime paper with a soft green glow, lime pills and outlined,
+   rounded buttons (learner's reference, final review). Verdicts keep their own
+   colors and always a text label; every text/background pair is >= 4.5:1. */
 @theme {
-  --color-paper: #faf8f3;
-  --color-sheet: #fffdf8;
+  --color-paper: #f5f9e8;
+  --color-sheet: #fcfef5;
   --color-ink: #16161a;
-  --color-muted: #5a5a63;
-  --color-rule: #ddd8cc;
-  --color-accent: #1f4fd1;
+  --color-muted: #55594a;
+  --color-rule: #dde6c6;
+  --color-accent: #3f6212; /* olive: links, focus, active step */
+  --color-lime: #c6ec6e; /* primary button fill */
+  --color-lime-soft: #e4f5b5; /* pills */
   --color-proven: #1e7a46;
+  --color-proven-tint: #e3f3e6;
   --color-notproven: #8a5a00;
+  --color-notproven-tint: #fbf0d9;
   --color-contradicted: #b42318;
+  --color-contradicted-tint: #fbe6e3;
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace;
@@ -22,10 +28,37 @@ html {
 }
 
 body {
-  background: var(--color-paper);
+  position: relative;
+  min-height: 100vh;
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  background:
+    radial-gradient(900px 700px at 105% 10%, #d6ef95 0%, rgba(214, 239, 149, 0) 60%),
+    radial-gradient(700px 500px at -10% 100%, #eaf6c9 0%, rgba(234, 246, 201, 0) 60%),
+    var(--color-paper);
+  background-attachment: fixed;
+}
+
+/* A slow-breathing glow at the right edge, like the reference. Decorative only. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 -20vw 0 auto;
+  width: 45vw;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(closest-side, rgba(166, 207, 90, 0.45), rgba(166, 207, 90, 0));
+  animation: glow-drift 18s ease-in-out infinite alternate;
+}
+
+@keyframes glow-drift {
+  from {
+    transform: translate3d(0, -4vh, 0) scale(1);
+  }
+  to {
+    transform: translate3d(-6vw, 6vh, 0) scale(1.15);
+  }
 }
 
 /* Small-caps section labels */
@@ -45,6 +78,176 @@ body {
 code {
   font-family: var(--font-mono);
   font-size: 0.92em;
-  background: #efebe1;
-  padding: 0 0.25em;
+  background: #ecf3d6;
+  padding: 0 0.3em;
+  border-radius: 0.3em;
+}
+
+/* Buttons: rounded, outlined in ink; primary is filled lime. They press down
+   like a physical key: a hard ink shadow that collapses on click. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1.5px solid var(--color-ink);
+  border-radius: 0.75rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  box-shadow: 0 2px 0 var(--color-ink);
+  transition:
+    transform 0.14s ease,
+    box-shadow 0.14s ease,
+    background-color 0.18s ease;
+}
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 var(--color-ink);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 var(--color-ink);
+}
+.btn:disabled {
+  cursor: not-allowed;
+  border-color: var(--color-rule);
+  color: var(--color-muted);
+  background: var(--color-sheet);
+  box-shadow: none;
+}
+.btn-primary {
+  background: var(--color-lime);
+}
+.btn-primary:hover:not(:disabled) {
+  background: #b9e356;
+}
+.btn-secondary {
+  background: var(--color-sheet);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: #f0f8d8;
+}
+
+/* Pills: lime, outlined, fully rounded (the reference's "Smart Financial Management" chip). */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  border: 1.5px solid #6f9a2a;
+  border-radius: 9999px;
+  background: var(--color-lime-soft);
+  color: var(--color-ink);
+  padding: 0.2rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Surfaces */
+.card {
+  border: 1px solid var(--color-rule);
+  border-radius: 1.25rem;
+  background: var(--color-sheet);
+  box-shadow: 0 1px 0 rgba(63, 98, 18, 0.06), 0 10px 30px -18px rgba(63, 98, 18, 0.35);
+}
+
+/* ---- Motion: each one marks a change of state. ---- */
+
+/* Landing headline: lines rise in once, in sequence. */
+.reveal-line {
+  display: block;
+  animation: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.reveal-line:nth-child(2) {
+  animation-delay: 0.12s;
+}
+.reveal-soft {
+  animation: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.25s both;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* A verdict badge pops when its verdict changes. */
+.pop {
+  animation: pop 0.35s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* New items (evidence, gap cards) settle in. */
+.enter {
+  animation: rise 0.4s ease-out both;
+}
+
+/* Coverage number bumps when it changes. */
+.bump {
+  display: inline-block;
+  animation: bump 0.45s ease-out both;
+}
+@keyframes bump {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.4;
+  }
+  60% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* 100%: the Proof Card arrives with one ring of light. */
+.celebrate {
+  animation:
+    rise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    ring 1.4s ease-out 0.3s 1 both;
+}
+@keyframes ring {
+  from {
+    box-shadow: 0 0 0 0 rgba(30, 122, 70, 0.45);
+  }
+  to {
+    box-shadow: 0 0 0 18px rgba(30, 122, 70, 0);
+  }
+}
+
+/* Coverage bar fills with a moving sheen while it grows. */
+.meter-fill {
+  background: linear-gradient(90deg, #1e7a46, #3f9a5f, #1e7a46);
+  background-size: 200% 100%;
+  transition: width 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: sheen 2.4s linear infinite;
+}
+@keyframes sheen {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

@@ -15,7 +15,7 @@ const EXPECTED: { id: ExpectedOutcome; label: string }[] = [
   { id: "persists", label: "persists: survives reload/restart" },
 ];
 
-const field = "w-full border border-rule bg-paper px-2 py-1.5 focus:border-accent";
+const field = "w-full rounded-lg border border-rule bg-paper px-2 py-1.5 focus:border-accent";
 
 export function ContractReview({ session, dispatch }: { session: Session; dispatch: (a: Action) => void }) {
   const reqs = session.contract.requirements;
@@ -60,7 +60,7 @@ export function ContractReview({ session, dispatch }: { session: Session; dispat
         </section>
 
         {reqs.length < 3 && (
-          <p role="status" className="border border-notproven bg-sheet p-3 text-sm">
+          <p role="status" className="rounded-xl border border-notproven bg-sheet p-3 text-sm">
             <span className="font-mono font-semibold text-notproven">LOW CONFIDENCE</span> Only {reqs.length} requirement
             {reqs.length === 1 ? "" : "s"} came out of this goal. Add what&apos;s missing, or edit these.
           </p>
@@ -73,13 +73,13 @@ export function ContractReview({ session, dispatch }: { session: Session; dispat
             return (
               <li
                 key={r.id}
-                className={`border bg-sheet p-4 ${r.flags.length ? "border-l-4 border-rule border-l-contradicted" : "border-rule"}`}
+                className={`card enter p-4 ${r.flags.length ? "border-l-4 !border-l-contradicted" : ""}`}
                 data-testid={`req-${r.id}`}
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-mono text-sm font-semibold">{r.id}</span>
                   {r.flags.length > 0 && (
-                    <span className="border border-contradicted px-1 font-mono text-[10px] font-semibold tracking-wider text-contradicted">
+                    <span className="rounded-full border border-contradicted bg-contradicted-tint px-2 font-mono text-[10px] font-semibold tracking-wider text-contradicted">
                       NEEDS EDIT
                     </span>
                   )}
@@ -110,7 +110,7 @@ export function ContractReview({ session, dispatch }: { session: Session; dispat
                         <button
                           type="button"
                           onClick={() => dispatch({ type: "splitRequirement", id: r.id })}
-                          className="border border-ink px-2 py-1 text-xs font-medium hover:bg-ink hover:text-paper"
+                          className="btn btn-secondary px-2 py-1 text-xs"
                         >
                           Split into 2
                         </button>
@@ -171,7 +171,7 @@ export function ContractReview({ session, dispatch }: { session: Session; dispat
             type="button"
             onClick={() => dispatch({ type: "addRequirement" })}
             disabled={reqs.length >= MAX_REQUIREMENTS}
-            className="border border-ink px-3 py-2 text-sm hover:bg-ink hover:text-paper disabled:border-rule disabled:text-muted disabled:hover:bg-transparent"
+            className="btn btn-secondary px-3 py-2 text-sm"
           >
             Add requirement
           </button>
@@ -185,7 +185,7 @@ export function ContractReview({ session, dispatch }: { session: Session; dispat
             type="button"
             onClick={() => dispatch({ type: "approveContract" })}
             disabled={blocker !== null}
-            className="bg-accent px-5 py-3 font-medium text-white hover:bg-accent/90 disabled:bg-rule disabled:text-muted"
+            className="btn btn-primary px-5 py-3"
           >
             Approve contract
           </button>

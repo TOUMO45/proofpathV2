@@ -15,12 +15,12 @@ const STEPS = [
 export function WorkspaceTopBar({ isDemo, coverage, step, onReset, onEditContract }: Props) {
   const activeIndex = STEPS.findIndex((s) => s.id === step);
   return (
-    <header className="border-b border-rule bg-paper">
+    <header className="sticky top-0 z-10 border-b border-rule bg-paper/80 backdrop-blur">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-2">
           <span className="font-semibold tracking-tight">ProofPath</span>
           {isDemo && (
-            <span className="border border-accent px-1.5 font-mono text-[11px] font-semibold tracking-wider text-accent" data-testid="demo-label">
+            <span className="pill font-mono text-[11px] tracking-wider" data-testid="demo-label">
               DEMO · FIXTURE DATA
             </span>
           )}
@@ -35,7 +35,7 @@ export function WorkspaceTopBar({ isDemo, coverage, step, onReset, onEditContrac
               )}
               <span
                 aria-current={i === activeIndex ? "step" : undefined}
-                className={i === activeIndex ? "font-semibold text-accent" : i < activeIndex ? "text-ink" : "text-muted"}
+                className={i === activeIndex ? "pill" : i < activeIndex ? "text-ink" : "text-muted"}
               >
                 {s.label}
               </span>

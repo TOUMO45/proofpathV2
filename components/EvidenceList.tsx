@@ -27,12 +27,12 @@ export function EvidenceList({ evidence, onRemove }: { evidence: Evidence[]; onR
       {evidence.map((e) => {
         const isSuperseded = superseded.has(e.id);
         return (
-          <li key={e.id} className="border border-rule bg-sheet p-3" data-testid={`evidence-${e.id}`}>
+          <li key={e.id} className="card enter p-3" data-testid={`evidence-${e.id}`}>
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-mono text-sm font-semibold">{e.id}</span>
               {e.kind === "claim" ? (
                 <span
-                  className="border border-ink px-1 font-mono text-[10px] font-semibold tracking-wider"
+                  className="rounded-full border border-ink px-2 font-mono text-[10px] font-semibold tracking-wider"
                   title="An AI agent's own completion message: a claim, not an observation."
                 >
                   AGENT CLAIM
@@ -48,7 +48,7 @@ export function EvidenceList({ evidence, onRemove }: { evidence: Evidence[]; onR
                 <span
                   key={f}
                   title={FLAG_LABEL[f]?.title}
-                  className="border border-contradicted px-1 font-mono text-[10px] font-semibold tracking-wider text-contradicted"
+                  className="rounded-full border border-contradicted bg-contradicted-tint px-2 font-mono text-[10px] font-semibold tracking-wider text-contradicted"
                 >
                   {FLAG_LABEL[f]?.text ?? f.toUpperCase()}
                 </span>

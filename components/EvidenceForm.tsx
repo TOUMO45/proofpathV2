@@ -18,7 +18,7 @@ const KINDS: { id: EvidenceKind; label: string; hint: string }[] = [
   { id: "claim", label: "Agent claim", hint: "Paste an AI agent's own \"done\" message, as-is." },
 ];
 
-const input = "w-full border border-rule bg-paper px-2 py-1.5 font-mono text-[13px] focus:border-accent";
+const input = "w-full rounded-lg border border-rule bg-paper px-2 py-1.5 font-mono text-[13px] focus:border-accent";
 
 type Props = { session: Session; onAdd: (draft: EvidenceDraft) => void; prefill?: RecordPrefill };
 
@@ -64,7 +64,7 @@ export function EvidenceForm({ session, onAdd, prefill }: Props) {
   }
 
   return (
-    <form id="evidence-form" onSubmit={submit} className="space-y-3 border border-rule bg-sheet p-4" aria-labelledby="add-evidence-label">
+    <form id="evidence-form" onSubmit={submit} className="card space-y-3 p-4" aria-labelledby="add-evidence-label">
       <h2 id="add-evidence-label" className="label">
         {prefill ? `Record the test for ${prefill.requirementId}` : "Add evidence"}
       </h2>
@@ -77,7 +77,7 @@ export function EvidenceForm({ session, onAdd, prefill }: Props) {
             role="radio"
             aria-checked={kind === k.id}
             onClick={() => setKind(k.id)}
-            className={`border px-2 py-1 text-xs ${kind === k.id ? "border-accent bg-accent text-white" : "border-rule text-ink hover:border-ink"}`}
+            className={`rounded-full border-[1.5px] px-3 py-1 text-xs font-medium transition-colors ${kind === k.id ? "border-ink bg-lime text-ink" : "border-rule bg-sheet text-ink hover:border-ink"}`}
           >
             {k.label}
           </button>
@@ -102,7 +102,7 @@ export function EvidenceForm({ session, onAdd, prefill }: Props) {
             <span className="label text-xs">
               observed{" "}
               {usingSample && (
-                <span className="ml-1 border border-accent px-1 font-mono text-[10px] tracking-wider text-accent normal-case">
+                <span className="pill ml-1 px-2 py-0 font-mono text-[10px] normal-case">
                   sample (demo)
                 </span>
               )}
@@ -156,7 +156,7 @@ export function EvidenceForm({ session, onAdd, prefill }: Props) {
       </fieldset>
 
       {linkHints.map((h) => (
-        <p key={h.requirementId} className="border border-rule bg-paper p-2 text-sm" data-testid={`link-hint-${h.requirementId}`}>
+        <p key={h.requirementId} className="enter rounded-xl border border-rule bg-paper p-2 text-sm" data-testid={`link-hint-${h.requirementId}`}>
           This also mentions {h.requirementId}&apos;s targets ({h.matched.join(", ")}).{" "}
           <button type="button" onClick={() => toggleLink(h.requirementId)} className="text-accent underline underline-offset-2">
             Link to {h.requirementId} too?
@@ -165,7 +165,7 @@ export function EvidenceForm({ session, onAdd, prefill }: Props) {
       ))}
 
       {retests.map((p) => (
-        <label key={p.evidenceId} className="flex items-start gap-2 border border-contradicted bg-paper p-2 text-sm" data-testid={`retest-${p.evidenceId}`}>
+        <label key={p.evidenceId} className="enter flex items-start gap-2 rounded-xl border border-contradicted bg-paper p-2 text-sm" data-testid={`retest-${p.evidenceId}`}>
           <input
             type="checkbox"
             className="mt-1 accent-accent"
@@ -201,7 +201,7 @@ export function EvidenceForm({ session, onAdd, prefill }: Props) {
           {error}
         </p>
       )}
-      <button type="submit" className="w-full border border-ink px-3 py-2 text-sm font-medium hover:bg-ink hover:text-paper">
+      <button type="submit" className="w-full btn btn-secondary px-3 py-2 text-sm">
         Add evidence
       </button>
     </form>

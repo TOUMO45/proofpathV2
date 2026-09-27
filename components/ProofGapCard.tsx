@@ -5,7 +5,7 @@ import { VerdictBadge } from "./VerdictBadge";
 export function ProofGapCard({ gap, onRecord, stale = false }: { gap: ProofGap; onRecord?: () => void; stale?: boolean }) {
   return (
     <article
-      className={`border border-rule border-l-4 bg-sheet p-5 ${stale ? "border-l-muted" : "border-l-notproven"}`}
+      className={`card enter border-l-4 p-5 ${stale ? "border-l-muted" : "border-l-notproven"}`}
       data-testid={`gap-${gap.requirementId}`}
       data-stale={stale || undefined}
     >
@@ -43,7 +43,7 @@ export function ProofGapCard({ gap, onRecord, stale = false }: { gap: ProofGap; 
         <button
           type="button"
           onClick={onRecord}
-          className="mt-4 border border-ink px-3 py-1.5 text-sm font-medium hover:bg-ink hover:text-paper"
+          className="mt-4 btn btn-secondary px-3 py-1.5 text-sm"
         >
           Record this test
         </button>

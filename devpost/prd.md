@@ -47,11 +47,13 @@ Source: `scope.md > The Core Loop`.
 The demo opens the same Workspace, clearly labeled **Demo**.
 
 ## Look and Feel
-- Serious and forensic, like an audit report, not a chatbot.
-- Off-white paper background, near-black text, one blue accent.
-- Verdict colors: green PROVEN, amber NOT PROVEN, red CONTRADICTED. Every verdict also has a text label; color is never the only signal.
+- Still an audit report in its content: flat, precise reasons with quoted evidence. The surface is livelier (learner decision at the final review, from a reference image: colors and button shapes only, not its content).
+- Pale lime paper with a soft green glow at the edge, near-black text, olive for links and focus.
+- Lime pill badges with a dark outline; rounded buttons outlined in ink (primary filled lime, secondary light) that press down when clicked. Rounded cards.
+- Verdict colors: green PROVEN, amber NOT PROVEN, red CONTRADICTED, as tinted pills. Every verdict also has a text label; color is never the only signal, which matters more now that the buttons are also green-ish.
+- Motion marks a change of state: the headline rises in once, a changed verdict pops, the coverage number bumps and its bar fills, new cards settle in, and the Proof Card arrives with one ring of light at 100%. All motion is off under reduced-motion settings.
 - Monospace for evidence and quotes. Small-caps section labels.
-- **Avoid:** gradients, sparkles, any "AI magic" look.
+- **Avoid:** sparkles or any "AI magic" look. (Gradients were originally cut; a soft background glow is now in, by the learner's decision.)
 - Light mode. Dark mode is optional, later.
 
 ## Features and Behavior

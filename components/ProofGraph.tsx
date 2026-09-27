@@ -11,7 +11,7 @@ type Props = { session: Session; current: boolean; onUnlink?: (evidenceId: strin
 export function ProofGraph({ session, current, onUnlink }: Props) {
   const superseded = supersededIds(session.evidence);
   return (
-    <section aria-labelledby="graph-label" className="border border-rule bg-sheet">
+    <section aria-labelledby="graph-label" className="card overflow-hidden">
       <div className="border-b border-rule px-5 py-3">
         <h2 id="graph-label" className="label">
           Proof graph
@@ -55,7 +55,7 @@ export function ProofGraph({ session, current, onUnlink }: Props) {
                 {linked.map((e) => (
                   <span
                     key={e.id}
-                    className={`border border-rule px-1.5 py-0.5 font-mono text-xs ${superseded.has(e.id) ? "text-muted line-through" : ""}`}
+                    className={`rounded-md border border-rule bg-paper px-1.5 py-0.5 font-mono text-xs ${superseded.has(e.id) ? "text-muted line-through" : ""}`}
                     title={superseded.has(e.id) ? "Superseded" : undefined}
                   >
                     {e.id}
@@ -76,7 +76,7 @@ export function ProofGraph({ session, current, onUnlink }: Props) {
                         key={o.evidenceId}
                         type="button"
                         onClick={() => onUnlink(o.evidenceId, req.id)}
-                        className="border border-ink px-2 py-1 text-xs font-medium hover:bg-ink hover:text-paper"
+                        className="btn btn-secondary px-2 py-1 text-xs"
                       >
                         Unlink {o.evidenceId} from {req.id}
                       </button>

@@ -50,26 +50,35 @@ Chosen by the learner. Versions to confirm at scaffold time; I haven't looked an
 - **For the demo recording:** open the live URL, or localhost, and press **Try the demo**. The submission still needs the video and the public repo; the live URL is extra.
 
 ## Look and Feel
-From `prd.md > Look and Feel` and `scope.md > Inspiration & Identity`.
+From `prd.md > Look and Feel` (revised at the final review) and `scope.md > Inspiration & Identity`. Tokens live in `app/globals.css`.
 
-- **Palette** (Tailwind theme tokens):
-  - paper background `#FAF8F3`
-  - ink `#16161A`
-  - muted ink `#5A5A63`
-  - rule lines `#DDD8CC`
-  - one blue accent `#1F4FD1`
-- **Verdict colors:**
-  - PROVEN green `#1E7A46`
-  - NOT PROVEN amber `#8A5A00` (5.58:1; the originally planned `#A86A00` measured 4.19:1)
-  - CONTRADICTED red `#B42318`
+- **Palette** (Tailwind theme tokens), every text pair measured at 4.5:1 or better:
+  - paper `#F5F9E8` with radial lime glows (`#D6EF95`, fixed); sheet `#FCFEF5`
+  - ink `#16161A` (16.8:1 on paper), muted `#55594A` (6.7:1), rule `#DDE6C6`
+  - accent (links, focus, active step) olive `#3F6212` (6.6:1)
+  - lime `#C6EC6E` for primary buttons (ink on lime 13.4:1); lime-soft `#E4F5B5` for pills (15.5:1). White text on lime is not used: it would be about 2.4:1.
+- **Verdict colors** (tinted pills, ink-outlined text label):
+  - PROVEN `#1E7A46` on `#E3F3E6` (4.6:1)
+  - NOT PROVEN `#8A5A00` on `#FBF0D9` (5.2:1)
+  - CONTRADICTED `#B42318` on `#FBE6E3` (5.5:1)
+- **Shapes:**
+  - `.btn`: 12px radius, 1.5px ink border, a 2px hard ink shadow that collapses on press; `.btn-primary` is lime, `.btn-secondary` is light
+  - `.pill`: fully rounded lime-soft chips with an olive outline
+  - `.card`: 20px radius, soft olive-tinted shadow
+- **Motion** (`app/globals.css`), each one tied to a state change:
+  - `.reveal-line`: headline lines rise in on load, staggered
+  - `.pop`: a verdict badge re-mounts when its status changes
+  - `.bump` and `.meter-fill`: the coverage number and bar
+  - `.enter`: new evidence, hints and gap cards
+  - `.celebrate`: the Proof Card at 100%
+  - a slow drifting glow behind the page
 
-  Each verdict always renders as a text badge ("PROVEN" etc.), never color alone. Verdict colors must reach at least 4.5:1 contrast on paper.
+  Everything is disabled under `prefers-reduced-motion`.
 - **Type:**
   - a clean system sans for UI text
-  - monospace (system mono stack) for evidence, quotes, evidence IDs and the Proof Card
-  - section labels in small caps with wide letter-spacing
-- **Density:** calm and document-like. Thin rules instead of shadows, square-ish corners, no gradients, sparkles or glow.
-- **Copy tone:** flat and precise, like an audit finding. "NOT PROVEN — evidence uses hypothetical wording: 'would be blocked'."
+  - monospace for evidence, quotes, evidence IDs and the Proof Card
+  - small-caps section labels
+- **Copy tone:** flat and precise, like an audit finding.
 - **Code in text:** backticks in any reason or gap text render as `<code>`, never as raw backticks.
 - **Mode:** light only (dark mode is deferred).
 

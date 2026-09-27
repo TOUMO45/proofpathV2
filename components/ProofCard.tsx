@@ -46,22 +46,22 @@ export function ProofCard({ markdown }: { markdown: string }) {
   }
 
   return (
-    <section aria-labelledby="proofcard-label" className="border-2 border-proven bg-sheet p-5" data-testid="proof-card">
+    <section aria-labelledby="proofcard-label" className="card celebrate border-2 !border-proven p-5" data-testid="proof-card">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id="proofcard-label" className="label text-proven">
           Proof card · 100% proven
         </h2>
         <div className="flex gap-2">
-          <button type="button" onClick={copy} className="bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent/90">
+          <button type="button" onClick={copy} className="btn btn-primary px-3 py-1.5 text-sm">
             {copied === "copied" ? "Copied" : "Copy as Markdown"}
           </button>
-          <button type="button" onClick={download} className="border border-ink px-3 py-1.5 text-sm hover:bg-ink hover:text-paper">
+          <button type="button" onClick={download} className="btn btn-secondary px-3 py-1.5 text-sm">
             Download .md
           </button>
         </div>
       </div>
       {copied === "failed" && <p className="mt-2 text-sm text-contradicted">Clipboard blocked by the browser. Use Download .md.</p>}
-      <pre className="mt-4 overflow-x-auto border border-rule bg-paper p-4 font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap">
+      <pre className="mt-4 overflow-x-auto rounded-xl border border-rule bg-paper p-4 font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap">
         {markdown}
       </pre>
       <p className="mt-2 text-xs text-muted">Paste it into a PR description or review comment as a proof checklist. It is not a certificate.</p>
