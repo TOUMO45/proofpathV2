@@ -60,7 +60,7 @@ From `prd.md > Look and Feel` and `scope.md > Inspiration & Identity`.
   - one blue accent `#1F4FD1`
 - **Verdict colors:**
   - PROVEN green `#1E7A46`
-  - NOT PROVEN amber `#A86A00`
+  - NOT PROVEN amber `#8A5A00` (5.58:1; the originally planned `#A86A00` measured 4.19:1)
   - CONTRADICTED red `#B42318`
 
   Each verdict always renders as a text badge ("PROVEN" etc.), never color alone. Verdict colors must reach at least 4.5:1 contrast on paper.
@@ -168,7 +168,7 @@ PRD ref: `prd.md > States and Boundaries`, `prd.md > Evidence`, `prd.md > Contra
 - **`ContractReview`:** edit, add, remove, flags, Split into 2, Approve. It shows each requirement's editable `expected` outcome and its target words, so you can see why a verdict lands the way it does.
 - **`WorkspaceTopBar`:** the steps plus the coverage meter, with a Demo label when a demo is loaded.
 - **`EvidenceForm`:** text or structured input, link checkboxes, and an optional Supersedes select.
-- **`EvidenceList`:** superseded items struck through, and an untrusted badge.
+- **`EvidenceList`:** superseded items struck through, an untrusted badge, and an "obfuscated text detected" badge.
 - **`ProofGraph`:** Goal → Requirements → Evidence → Verdict, as plain HTML/CSS columns with connector lines. No graph library.
 - **`CoverageBar`**, **`ProofGapCard`**, **`ProofCard`** (Copy / Download).
 - **`VerdictBadge`:** a text badge in the verdict color.

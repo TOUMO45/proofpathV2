@@ -25,22 +25,58 @@ const IRREGULAR: Record<string, string> = {
   visibility: "visible",
 };
 
-// Cyrillic and Greek letters that render like Latin ones ("wоuld" with a
-// Cyrillic о). Mapped to Latin so no screen can be dodged by lookalikes.
-const CONFUSABLES: Record<string, string> = {
-  а: "a", в: "b", е: "e", ё: "e", к: "k", м: "m", н: "h", о: "o", р: "p", с: "c", т: "t", у: "y", х: "x",
-  і: "i", ї: "i", ј: "j", ѕ: "s", ԁ: "d", ԛ: "q", ԝ: "w", ɡ: "g", һ: "h", ӏ: "l",
-  А: "A", В: "B", Е: "E", К: "K", М: "M", Н: "H", О: "O", Р: "P", С: "C", Т: "T", У: "Y", Х: "X", І: "I", Ј: "J", Ѕ: "S",
-  α: "a", ε: "e", ι: "i", κ: "k", ν: "v", ο: "o", ρ: "p", τ: "t", υ: "u", χ: "x",
-  Α: "A", Β: "B", Ε: "E", Ζ: "Z", Η: "H", Ι: "I", Κ: "K", Μ: "M", Ν: "N", Ο: "O", Ρ: "P", Τ: "T", Υ: "Y", Χ: "X",
-};
-const CONFUSABLE_RE = new RegExp(`[${Object.keys(CONFUSABLES).join("")}]`, "g");
+// Cyrillic and Greek letters that render like Latin ones ("would" spelled with
+// a Cyrillic o). Written as code points so no lookalike hides in this file.
+// [code point, Latin letter]
+const CONFUSABLE_PAIRS: [number, string][] = [
+  // Cyrillic lowercase: a b e e k m h o p c t y x i i j s d q w h l
+  [0x0430, "a"], [0x0432, "b"], [0x0435, "e"], [0x0451, "e"], [0x043a, "k"], [0x043c, "m"], [0x043d, "h"],
+  [0x043e, "o"], [0x0440, "p"], [0x0441, "c"], [0x0442, "t"], [0x0443, "y"], [0x0445, "x"], [0x0456, "i"],
+  [0x0457, "i"], [0x0458, "j"], [0x0455, "s"], [0x0501, "d"], [0x051b, "q"], [0x051d, "w"], [0x04bb, "h"], [0x04cf, "l"],
+  // Latin script g (U+0261)
+  [0x0261, "g"],
+  // Cyrillic uppercase: A B E K M H O P C T Y X I J S
+  [0x0410, "A"], [0x0412, "B"], [0x0415, "E"], [0x041a, "K"], [0x041c, "M"], [0x041d, "H"], [0x041e, "O"],
+  [0x0420, "P"], [0x0421, "C"], [0x0422, "T"], [0x0423, "Y"], [0x0425, "X"], [0x0406, "I"], [0x0408, "J"], [0x0405, "S"],
+  // Greek lowercase: a e i k v o p t u x
+  [0x03b1, "a"], [0x03b5, "e"], [0x03b9, "i"], [0x03ba, "k"], [0x03bd, "v"], [0x03bf, "o"], [0x03c1, "p"],
+  [0x03c4, "t"], [0x03c5, "u"], [0x03c7, "x"],
+  // Greek uppercase: A B E Z H I K M N O P T Y X
+  [0x0391, "A"], [0x0392, "B"], [0x0395, "E"], [0x0396, "Z"], [0x0397, "H"], [0x0399, "I"], [0x039a, "K"],
+  [0x039c, "M"], [0x039d, "N"], [0x039f, "O"], [0x03a1, "P"], [0x03a4, "T"], [0x03a5, "Y"], [0x03a7, "X"],
+];
+const CONFUSABLES = new Map(CONFUSABLE_PAIRS.map(([cp, latin]) => [String.fromCodePoint(cp), latin]));
+const CONFUSABLE_CLASS = CONFUSABLE_PAIRS.map(([cp]) => `\\u{${cp.toString(16)}}`).join("");
+const CONFUSABLE_RE = new RegExp(`[${CONFUSABLE_CLASS}]`, "gu");
+// A lookalike or fullwidth Latin letter (U+FF21-FF3A, U+FF41-FF5A).
+const LOOKALIKE_RE = new RegExp(`[${CONFUSABLE_CLASS}\\u{ff21}-\\u{ff3a}\\u{ff41}-\\u{ff5a}]`, "u");
+const FULLWIDTH_WORD_RE = /^[\u{ff21}-\u{ff3a}\u{ff41}-\u{ff5a}]+$/u;
+// Bidi embedding/override/isolate controls (U+202A-202E, U+2066-2069).
+const BIDI_RE = /[\u{202a}-\u{202e}\u{2066}-\u{2069}]/u;
+// Letters plus the zero-width characters that can hide inside a word
+// (U+200B-200D zero-width space/non-joiner/joiner, U+2060 word joiner, U+FEFF).
+const WORD_RE = /[\p{L}\u{200b}-\u{200d}\u{2060}\u{feff}]+/gu;
+
+/**
+ * True when normalize() would have to undo an attempt to hide something:
+ * - an invisible format character between two letters/digits ("wo" + U+200B + "uld"),
+ *   but not a zero-width joiner inside an emoji sequence
+ * - a bidi control character (can reorder what a reader sees)
+ * - a word mixing Latin letters with lookalike letters, or written in fullwidth
+ *   letters, but not a word written entirely in Cyrillic or Greek
+ */
+export function hasObfuscation(text: string): boolean {
+  if (/[\p{L}\p{N}]\p{Cf}+[\p{L}\p{N}]/u.test(text)) return true;
+  if (BIDI_RE.test(text)) return true;
+  const words = text.match(WORD_RE) ?? [];
+  return words.some((w) => LOOKALIKE_RE.test(w) && (/[A-Za-z]/.test(w) || FULLWIDTH_WORD_RE.test(w)));
+}
 
 /**
  * Canonical form of any evidence or requirement text. Runs before every screen:
- * - NFKC folds fullwidth and other compatibility forms ("ｍａｒｋ" → "mark")
- * - invisible format characters are removed (zero-width space/joiners, soft
- *   hyphen, bidi controls: "wo​uld" → "would")
+ * - NFKC folds fullwidth and other compatibility forms (fullwidth "mark" -> "mark")
+ * - invisible format characters (Unicode category Cf) are removed: zero-width
+ *   space/joiners, soft hyphen, bidi controls
  * - Cyrillic/Greek lookalikes become Latin
  * - curly quotes become straight quotes, whitespace collapses
  */
@@ -48,9 +84,9 @@ export function normalize(text: string): string {
   return text
     .normalize("NFKC")
     .replace(/\p{Cf}/gu, "")
-    .replace(CONFUSABLE_RE, (c) => CONFUSABLES[c])
-    .replace(/[‘’‛]/g, "'")
-    .replace(/[“”‟]/g, '"')
+    .replace(CONFUSABLE_RE, (c) => CONFUSABLES.get(c) ?? c)
+    .replace(/[\u{2018}\u{2019}\u{201b}]/gu, "'")
+    .replace(/[\u{201c}\u{201d}\u{201f}]/gu, '"')
     .replace(/\s+/g, " ")
     .trim();
 }

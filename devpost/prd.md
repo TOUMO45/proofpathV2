@@ -225,6 +225,7 @@ Coverage starts at 25%. The Proof Gaps say exactly what to test. The developer a
 - **No evidence at Verify:** every requirement is NOT PROVEN, with a clear reason.
 - **Stale verdicts:** after evidence is added, superseded or removed, or the contract is reopened, verdicts are marked stale and must be verified again. Stale results never appear as current, and the Proof Card never shows from stale verdicts.
 - **Injection-like evidence:** an "untrusted, treated as data" badge. It contributes nothing.
+- **Obfuscated evidence** (invisible characters between letters, bidi controls, lookalike or fullwidth letters mixed into Latin words): an "obfuscated text detected" badge. The text is normalized before judging, and the verdict logic doesn't change; the badge is a visible warning.
 - **Conflicting evidence:** CONTRADICTED, naming both items.
 - **Reload:** the state survives a page reload, stored locally in the browser. Nothing leaves the browser.
 

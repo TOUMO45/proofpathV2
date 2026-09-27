@@ -6,8 +6,8 @@
 .env.*
 !.env.example
 
-# Skill pack: .claude/skills are local junctions into .agents/skills; agent/ is a duplicate copy
-/.claude/skills/
+# Local agent config (.claude/skills are junctions into .agents/skills); agent/ is a duplicate skill copy
+/.claude/
 /agent/
 
 # Build output

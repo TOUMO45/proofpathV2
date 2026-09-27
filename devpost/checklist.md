@@ -32,7 +32,7 @@ Build mode: fast (chosen in `4-spec`: verification and a commit for every slice,
   Learner check: Run `npm test` and `npm run demo:verify`. Then try to fool it: add one bluff of your own to a test file (a hypothetical, a hidden instruction, a conflicting pair) and see whether the verifier holds.
   Commit: `Add deterministic verifier with adversarial test suite`
 
-- [ ] **2. Try the demo: see verdicts, coverage and Proof Gaps in the browser**
+- [x] **2. Try the demo: see verdicts, coverage and Proof Gaps in the browser**
   Becomes usable: The Landing screen shows the headline and **Try the demo**. That opens the Workspace, labeled "Demo", with the contract, the preloaded evidence list, a **Verify** button, verdict badges with quoted reasons, a 25% coverage meter, the Proof Graph, and a Proof Gap card for each unproven requirement. The session survives a reload.
   Why now: It puts the kernel on screen as early as possible, in the audit-report look, so your early feedback can shape every UI slice after it.
   PRD ref: `prd.md > Screens and Layout`, `prd.md > Look and Feel`, `prd.md > Coverage and Proof Graph`, `prd.md > Proof Gap`, `prd.md > Built-in Demo`, `prd.md > States and Boundaries`
@@ -136,3 +136,8 @@ Activity mode:
 - Quoted app text ("'We'll reply soon' shown") is ignored by the hypothetical and vague screens: it's what the app displayed, not the tester's wording.
 - Toolchain: ESLint is pinned to 9, because `eslint-config-next` 16's bundled React plugins crash on ESLint 10. TypeScript is 6.0, because `typescript-eslint` doesn't support TypeScript 7 yet. The Vitest config is `.mts`.
 - Evidence text is canonicalized before every screen (`lib/text.ts > normalize`): NFKC, invisible format characters removed, Cyrillic/Greek lookalikes mapped to Latin. Structured fields are included. The slice-1 learner check found that zero-width splits (`wo​uld`) and homoglyphs (`wоuld` with a Cyrillic о) gave false PROVENs, and fullwidth or homoglyph injections went unflagged. Covered by `tests/obfuscation.test.ts`.
+- An "obfuscated text detected" flag and badge were added to evidence, at the learner's request after the slice-1 check, and folded into slice 2. The flag fires on invisible characters between letters, bidi controls, and lookalike or fullwidth letters in Latin words. It doesn't fire on emoji zero-width joiners or on all-Cyrillic words. The verdict logic is unchanged. `prd.md > States and Boundaries` and `spec.md > UI Components` are updated.
+- NOT PROVEN amber is `#8A5A00`, not `#A86A00`: measured contrast on paper was 4.19:1, below the spec's own 4.5:1 rule.
+- Special characters in source and tests are written as code points (`String.fromCodePoint(0x200b)`), never as raw characters, so no invisible or lookalike character hides in the repo.
+- `next.config.mjs` sets `agentRules: false`: Next 16's `next dev` otherwise writes `AGENTS.md` and `CLAUDE.md` into the repo root.
+- The store's `hydrated` flag lives in the reducer (not `useState`), because the React lint rule forbids calling `setState` inside an effect.

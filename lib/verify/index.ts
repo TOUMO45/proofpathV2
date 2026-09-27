@@ -4,7 +4,7 @@
 
 import type { Contract, Evidence, Requirement, Verdict } from "../types";
 import { findInjection } from "./screens";
-import { parseEvidence } from "../text";
+import { hasObfuscation, parseEvidence } from "../text";
 import { stance, type Stance } from "./stance";
 
 export { stance } from "./stance";
@@ -14,9 +14,17 @@ export function supersededIds(evidence: Evidence[]): Set<string> {
   return new Set(evidence.map((e) => e.supersedes).filter((id): id is string => Boolean(id)));
 }
 
-/** Flags the UI shows on an evidence item, e.g. the untrusted badge. */
+/**
+ * Flags the UI shows as badges on an evidence item. Neither changes a verdict by
+ * itself: "untrusted" evidence is already ignored by the verifier, and
+ * "obfuscated" is a visible warning that someone tried to hide characters.
+ */
 export function evidenceFlags(e: Evidence): string[] {
-  return findInjection(parseEvidence(e).all) ? ["untrusted"] : [];
+  const flags: string[] = [];
+  if (findInjection(parseEvidence(e).all)) flags.push("untrusted");
+  const raw = e.kind === "structured" && e.structured ? Object.values(e.structured).join("\n") : (e.text ?? "");
+  if (hasObfuscation(raw)) flags.push("obfuscated");
+  return flags;
 }
 
 type Judged = { evidence: Evidence; stance: Stance };

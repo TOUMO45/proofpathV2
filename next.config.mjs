@@ -8,6 +8,8 @@ const nextConfig = {
   basePath,
   images: { unoptimized: true },
   trailingSlash: true,
+  // Don't let `next dev` write AGENTS.md / CLAUDE.md into the repo root.
+  agentRules: false,
 };
 
 export default nextConfig;
