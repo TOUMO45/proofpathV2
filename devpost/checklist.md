@@ -171,3 +171,4 @@ Activity mode:
   - (3) Neutral and support quotes come only from sentences sharing target words, otherwise none. A contradiction or injection still quotes the failure or instruction it found, because that sentence is the evidence ("Page shows 500 Internal Server Error" shares no target word with R3).
   - (4) A fixture reconstructed around the quoted paragraph (`tests/fixtures/tip-agent-reply-separately.md`) until the exact reply is supplied.
 - Claims are now judged without the wording screens (they are composed into the note instead), so a hypothetical sentence anywhere in a long reply can no longer hide a reported failure.
+- Browser check found doubled quotes when a quoted sentence contained its own double quotes (`…"Amount must be positive""`). Inner double quotes now become single quotes in every quote, covered in `tests/claim-reason.test.ts`.

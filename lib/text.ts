@@ -144,7 +144,9 @@ export function stripWrappingQuotes(text: string): string {
   while (s.length >= 2 && /^["'`]/.test(s) && s[s.length - 1] === s[0]) {
     s = s.slice(1, -1).trim();
   }
-  return s;
+  // Double quotes inside become single quotes, so a quoted sentence like
+  // rejected with "Amount must be positive" never ends in doubled quotes.
+  return s.replace(/"/g, "'");
 }
 
 /**

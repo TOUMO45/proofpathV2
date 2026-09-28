@@ -48,6 +48,12 @@ describe("agent reply with an unrelated 'Separately…' paragraph", () => {
     }
   });
 
+  it("a quoted sentence with its own quotes never produces doubled quotes", () => {
+    const r3 = checked().session!.verdicts.find((v) => v.requirementId === "R3")!;
+    expect(r3.reason).toContain(`"Negative amounts are rejected with the message 'Amount must be positive'"`);
+    for (const v of checked().session!.verdicts) expect(v.reason).not.toMatch(/""|"'"|'""/);
+  });
+
   it("each reason quotes a sentence about its own requirement", () => {
     const s = checked().session!;
     const reason = (id: string) => s.verdicts.find((v) => v.requirementId === id)!.reason;
