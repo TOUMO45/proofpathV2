@@ -134,9 +134,14 @@ export function stance(
     }
   }
 
-  // Quoted text is what the app displayed ("The bill can't be negative."), not
-  // the tester saying something didn't happen, so negation skips it.
-  for (const sentence of parsed.observed ? [withoutQuotes(parsed.observed)] : []) {
+  // Quoted text is what the app displayed. On a `rejects` requirement a
+  // validation message naturally says "can't" / "not" ("The bill can't be
+  // negative."), so negation skips quoted text there, and only there.
+  // Everywhere else a quoted "Payment not processed" still contradicts:
+  // quoting a failure must not hide it. (Error signals and accepted input are
+  // read inside quotes for every outcome.)
+  const negationText = req.expected === "rejects" ? withoutQuotes(parsed.observed) : parsed.observed;
+  for (const sentence of parsed.observed ? [negationText] : []) {
     const negTarget = findNegatedTarget(sentence, isTarget);
     const isOutcome = (w: string) => OUTCOME_WORDS[req.expected].some((o) => wordsMatch(w, o));
     const negOutcome = negTarget ? null : findNegatedTarget(sentence, isOutcome);

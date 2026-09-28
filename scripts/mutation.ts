@@ -42,9 +42,14 @@ const MUTATIONS: Mutation[] = [
     edits: [['  if (e.kind !== "claim") return stance(req, e, linked);', "  if (true) return stance(req, e, linked);"]],
   },
   {
-    rule: "Negation skips quoted UI text",
+    rule: "Quoted validation messages aren't negations (rejects)",
     file: "lib/verify/stance.ts",
-    edits: [["[withoutQuotes(parsed.observed)]", "[parsed.observed]"]],
+    edits: [['req.expected === "rejects" ? withoutQuotes(parsed.observed) : parsed.observed', "parsed.observed"]],
+  },
+  {
+    rule: "Quoting a failure doesn't hide it (other outcomes)",
+    file: "lib/verify/stance.ts",
+    edits: [['req.expected === "rejects" ? withoutQuotes(parsed.observed) : parsed.observed', "withoutQuotes(parsed.observed)"]],
   },
   {
     rule: "A claim contradicts only on an unambiguous failure",
