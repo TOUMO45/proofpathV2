@@ -273,6 +273,7 @@ Coverage starts at 25%. The Proof Gaps say exactly what to test. The developer a
 - **Obfuscated evidence** (invisible characters between letters, bidi controls, lookalike or fullwidth letters mixed into Latin words): an "obfuscated text detected" badge. The text is normalized before judging, and the verdict logic doesn't change; the badge is a visible warning.
 - **Conflicting evidence:** CONTRADICTED, naming both items.
 - **Reload:** the state survives a page reload, stored locally in the browser. Nothing leaves the browser.
+- **Rules updated:** verdicts are stamped with the ProofPath rules version that produced them. A saved session from other rules shows its verdicts as STALE with "Rules were updated since these verdicts. Re-verify." The version is shown in the footer and on the Proof Card ("ProofPath rules v…").
 
 ## Product Decisions
 - **Coverage = proven ÷ total, never a confidence score.** Nothing pretends to be a probability. (`scope.md > Explicitly Cut`)

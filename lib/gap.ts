@@ -2,7 +2,7 @@
 // concrete test to run next. spec.md > Gap Builder (lib/gap).
 
 import { claimFacts } from "./claims";
-import { matchedTargets } from "./text";
+import { ownTargets, targetOccurrences } from "./text";
 import type { Contract, Evidence, ExpectedOutcome, Requirement, Session, Verdict } from "./types";
 import { supersededIds } from "./verify";
 
@@ -73,7 +73,7 @@ function claimsFor(req: Requirement, e: Evidence, contract: Contract): string[] 
   const linked = contract.requirements.filter((r) => e.links.includes(r.id));
   const all = claimFacts(e.text ?? "", [], { fallbackToAll: true, max: 50 });
   return all.filter((fact) => {
-    const scores = linked.map((r) => ({ id: r.id, n: matchedTargets(fact, r.targets).length }));
+    const scores = linked.map((r) => ({ id: r.id, n: targetOccurrences(fact, ownTargets(r.targets, r.shared)) }));
     const top = Math.max(0, ...scores.map((s) => s.n));
     if (top === 0) return linked.length === 1; // about nothing specific: only if the message is about this one requirement
     return scores.some((s) => s.id === req.id && s.n === top);

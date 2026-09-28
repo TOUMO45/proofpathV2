@@ -100,6 +100,21 @@ describe("end to end: agent reply → 0% → the learner's observations → 100%
     for (const g of gaps) for (const c of g.agentClaims) expect(c).not.toMatch(/Separately|checklist/);
   });
 
+  it("quotes rank by distinguishing words (R2: shows/total; R3: rejects/negative/message), not shared subject words", () => {
+    const reasons = Object.fromEntries(approved().session!.verdicts.map((v) => [v.requirementId, v.reason]));
+    expect(reasons.R2).toContain('"Math: `125.00 @ 18%` → tip `$22.50`, total `147.50`"');
+    expect(reasons.R2).not.toMatch(/Done — tip-calculator\.html/);
+    expect(reasons.R3).toContain("\"Negative bill → inline error 'The bill can't be negative. Enter 0 or more.'");
+    expect(reasons.R1).toContain('"Bill amount + Tip % inputs');
+  });
+
+  it("AGENT CLAIMS lists are on topic: R2 no longer lists the 'Motion is limited to one tick' line", () => {
+    const byReq = Object.fromEntries(gapsForDisplay(approved().session!).gaps.map((g) => [g.requirementId, g.agentClaims]));
+    expect(byReq.R2).toEqual(["Math: `125.00 @ 18%` → tip `$22.50`, total `147.50`"]);
+    expect(byReq.R2.some((c) => /Motion is limited/.test(c))).toBe(false);
+    expect(byReq.R1[0]).toMatch(/^Bill amount \+ Tip % inputs/); // judged concrete on the whole line, before shortening
+  });
+
   it("the learner's own observations take it to 100%", () => {
     const s = run([...LEARNER_OBSERVATIONS, { type: "verify" }], approved()).session!;
     expect(s.verdicts.map((v) => [v.requirementId, v.status])).toEqual([

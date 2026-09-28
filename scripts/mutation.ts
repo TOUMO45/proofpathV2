@@ -57,6 +57,11 @@ const MUTATIONS: Mutation[] = [
     edits: [["(!signal || isAppFailure(signal[1]))", "true"]],
   },
   {
+    rule: "Relevance ranks by distinguishing words, not the shared subject",
+    file: "lib/text.ts",
+    edits: [["  return own.length > 0 ? own : targets;", "  return targets;"]],
+  },
+  {
     rule: "Text normalization (invisible chars, lookalikes, fullwidth)",
     file: "lib/text.ts",
     edits: [
@@ -91,6 +96,47 @@ function applyEdits(source: string, m: Mutation): string {
   return out;
 }
 
+// Snapshot every file a mutation touches, so the verifier can never be left
+// weakened: a restore that fails (e.g. a file briefly locked by a running dev
+// server's watcher on Windows) is retried, every file is checked against its
+// snapshot at the end, and an interrupted run restores on exit.
+const snapshots = new Map(MUTATIONS.map((m) => [m.file, readFileSync(m.file, "utf8")] as const));
+
+function sleep(ms: number) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+function restore(file: string): void {
+  const original = snapshots.get(file)!;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      writeFileSync(file, original);
+      if (readFileSync(file, "utf8") === original) return;
+    } catch (err) {
+      if (attempt >= 50) throw err;
+    }
+    if (attempt >= 50) throw new Error(`Could not restore ${file}`);
+    sleep(100);
+  }
+}
+
+function restoreAll(): string[] {
+  const failed: string[] = [];
+  for (const file of snapshots.keys()) {
+    try {
+      restore(file);
+    } catch {
+      failed.push(file);
+    }
+  }
+  return failed;
+}
+
+process.on("exit", () => {
+  restoreAll();
+});
+process.on("SIGINT", () => process.exit(130));
+
 const baseline = runTests();
 if (baseline.failed > 0) {
   console.error(`Baseline has ${baseline.failed} failing tests; fix those before a mutation run.`);
@@ -99,15 +145,21 @@ if (baseline.failed > 0) {
 
 const results: Result[] = [];
 for (const m of MUTATIONS) {
-  const original = readFileSync(m.file, "utf8");
   try {
-    writeFileSync(m.file, applyEdits(original, m));
+    writeFileSync(m.file, applyEdits(snapshots.get(m.file)!, m));
     const r = runTests();
     results.push({ rule: m.rule, failed: r.failed, total: r.total });
     process.stderr.write(`${m.rule}: ${r.failed} failing\n`);
   } finally {
-    writeFileSync(m.file, original);
+    restore(m.file);
   }
+}
+
+// Final check: every touched file must match its snapshot exactly.
+const unrestored = restoreAll().concat([...snapshots].filter(([f, s]) => readFileSync(f, "utf8") !== s).map(([f]) => f));
+if (unrestored.length > 0) {
+  console.error(`MUTATION LEFT IN SOURCE, restore by hand: ${[...new Set(unrestored)].join(", ")}`);
+  process.exit(2);
 }
 
 const table = [

@@ -12,6 +12,9 @@ export const RequirementSchema = z.object({
   proofTemplate: z.string(),
   expected: ExpectedOutcomeSchema,
   targets: z.array(z.string().min(1)),
+  // Targets that come from the shared subject ("tip", "calculator"): they match
+  // every requirement about it, so they only break ties when ranking.
+  shared: z.array(z.string()).default([]),
   flags: z.array(z.string()),
 });
 export type Requirement = z.infer<typeof RequirementSchema>;
@@ -82,5 +85,7 @@ export const SessionSchema = z.object({
   // "Check an agent's reply": the reply waits here until the contract is
   // approved, then becomes E1 (an agent claim linked to every requirement).
   pendingClaim: z.string().optional(),
+  // The RULES_VERSION that produced `verdicts`.
+  rulesVersion: z.string().optional(),
 });
 export type Session = z.infer<typeof SessionSchema>;

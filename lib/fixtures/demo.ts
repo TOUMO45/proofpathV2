@@ -15,6 +15,7 @@ export const demoContract: Contract = {
       proofTemplate: "Open the contact page and observe the name, email and message fields.",
       expected: "displays",
       targets: ["name", "email", "message", "field"],
+      shared: [],
       flags: [],
     },
     {
@@ -23,6 +24,7 @@ export const demoContract: Contract = {
       proofTemplate: "Enter an invalid email, press Send, and observe the validation message and that nothing was submitted.",
       expected: "rejects",
       targets: ["invalid", "email", "reject", "validation", "message", "block"],
+      shared: [],
       flags: [],
     },
     {
@@ -31,6 +33,7 @@ export const demoContract: Contract = {
       proofTemplate: "Fill in valid details, press Send, and observe the submission complete with no errors.",
       expected: "succeeds",
       targets: ["submit", "send", "succeed", "complete", "thank"],
+      shared: [],
       flags: [],
     },
     {
@@ -39,6 +42,7 @@ export const demoContract: Contract = {
       proofTemplate: "Submit the form and observe the confirmation message text on screen.",
       expected: "displays",
       targets: ["confirmation", "thank", "message", "submit"],
+      shared: [],
       flags: [],
     },
   ],

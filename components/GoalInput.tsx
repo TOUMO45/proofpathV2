@@ -4,6 +4,7 @@
 // verifier working; your own goal is the second path below it.
 
 import { useEffect, useRef, useState } from "react";
+import { RULES_VERSION } from "@/lib/verify";
 import { UploadLink } from "./UploadLink";
 
 type Props = {
@@ -215,7 +216,10 @@ export function GoalInput({ onTryDemo, onCreate, onImport, onCheckReply, initial
         </form>
       </section>
 
-      <footer className="mt-auto pt-16 text-xs text-muted">Runs entirely in your browser. No account, no API key, nothing sent anywhere.</footer>
+      <footer className="mt-auto pt-16 text-xs text-muted">
+        Runs entirely in your browser. No account, no API key, nothing sent anywhere. ·{" "}
+        <span data-testid="rules-version">ProofPath rules v{RULES_VERSION}</span>
+      </footer>
     </main>
   );
 }

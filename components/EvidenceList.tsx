@@ -72,7 +72,7 @@ export function EvidenceList({ evidence, onRemove }: { evidence: Evidence[]; onR
                   <Field name="Observed" value={e.structured.observed} />
                 </>
               ) : (
-                <p className="font-mono text-[13px] break-words">{e.text}</p>
+                <p className="font-mono text-[13px] break-words whitespace-pre-wrap" data-testid={`evidence-text-${e.id}`}>{e.text}</p>
               )}
             </div>
             {isSuperseded && (

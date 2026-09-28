@@ -167,24 +167,56 @@ export function stripWrappingQuotes(text: string): string {
 }
 
 /**
- * Quote the sentence with the most target-word overlap (ties: the first one),
- * trimmed of wrapping quotes and trailing punctuation, capped at 160 characters.
- * If no sentence shares a target word, quote nothing: an unrelated sentence
- * would only mislead.
+ * A concrete statement: a number, an input→output arrow, or a quoted string of
+ * at least two words (a one-word quote like "tick" is not a checkable claim).
  */
-export function quoteBest(text: string, targets: string[]): string {
-  const sentences = splitSentences(text);
-  if (sentences.length === 0) return "";
-  let best = sentences[0];
-  let bestScore = -1;
-  for (const s of sentences) {
-    const score = matchedTargets(s, targets).length;
-    if (score > bestScore) {
+export function isConcrete(sentence: string): boolean {
+  return /→|->|=>|⇒/.test(sentence) || /\d/.test(sentence) || /"[^"]*\S\s+\S[^"]*"/.test(sentence);
+}
+
+/** The target words that distinguish a requirement: its targets minus the shared subject words. */
+export function ownTargets(targets: string[], shared: string[] = []): string[] {
+  const own = targets.filter((t) => !shared.includes(t));
+  return own.length > 0 ? own : targets;
+}
+
+/** How many words in the text match one of the targets (repeats count). */
+export function targetOccurrences(text: string, targets: string[]): number {
+  return tokenize(text).filter((w) => targets.some((t) => wordsMatch(w, t))).length;
+}
+
+/**
+ * How strongly a sentence is about a requirement, compared in order:
+ * distinguishing target words (repeats count), then concreteness, then shared
+ * subject words. A sentence with no distinguishing word is off topic (null).
+ */
+export function relevance(sentence: string, targets: string[], shared: string[] = []): [number, number, number] | null {
+  const own = targetOccurrences(sentence, ownTargets(targets, shared));
+  if (own === 0) return null;
+  return [own, isConcrete(sentence) ? 1 : 0, matchedTargets(sentence, shared).length];
+}
+
+export function compareRelevance(a: [number, number, number], b: [number, number, number]): number {
+  return a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+}
+
+/**
+ * Quote the most relevant sentence (see `relevance`; ties: the first one),
+ * trimmed of wrapping quotes and trailing punctuation, capped at 160 characters.
+ * If no sentence has a distinguishing target word, quote nothing: an unrelated
+ * sentence would only mislead.
+ */
+export function quoteBest(text: string, targets: string[], shared: string[] = []): string {
+  let best: string | null = null;
+  let bestScore: [number, number, number] | null = null;
+  for (const s of splitSentences(text)) {
+    const score = relevance(s, targets, shared);
+    if (score && (!bestScore || compareRelevance(score, bestScore) > 0)) {
       best = s;
       bestScore = score;
     }
   }
-  if (bestScore <= 0) return "";
+  if (!best) return "";
   let q = stripWrappingQuotes(best.replace(/^[-*+]\s+/, "").replace(/[.;,]+$/, ""));
   if (q.length > 160) q = q.slice(0, 157).trimEnd() + "…";
   return q;

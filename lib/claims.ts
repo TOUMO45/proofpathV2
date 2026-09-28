@@ -3,17 +3,14 @@
 // prove anything, but they are exactly what to check next, so the Proof Gap
 // lists them: "The agent claims: … Check it."
 
-import { matchedTargets, splitSentences } from "./text";
+import { isConcrete, matchedTargets, splitSentences } from "./text";
 
-const ARROW = /→|->|=>|⇒/;
-const QUOTED = /"[^"]{2,}"|(^|[^A-Za-z])'[^']{2,}'(?![A-Za-z])/;
-const NUMBER = /\d/;
 // A leading "Verified:" / "Tested:" label adds nothing to the claim itself.
 const LEADING_LABEL = /^(verified|tested|checked|confirmed|result|output|example)\s*:\s*/i;
 const MAX_LENGTH = 120;
 
 export function isConcreteClaim(sentence: string): boolean {
-  return ARROW.test(sentence) || QUOTED.test(sentence) || NUMBER.test(sentence);
+  return isConcrete(sentence);
 }
 
 function tidyClaim(sentence: string): string {
@@ -31,7 +28,8 @@ function tidyClaim(sentence: string): string {
 export function claimFacts(text: string, targets: string[], { fallbackToAll = false, max = 3 } = {}): string[] {
   // per line, and never split inside a quoted UI message
   const lines = splitSentences(text);
-  const concrete = [...new Set(lines.map(tidyClaim).filter((s) => s && isConcreteClaim(s)))];
+  // concreteness is judged on the whole sentence, before it is shortened
+  const concrete = [...new Set(lines.filter((l) => isConcreteClaim(l)).map(tidyClaim).filter(Boolean))];
   const onTopic = concrete.filter((s) => matchedTargets(s, targets).length > 0);
   return (onTopic.length > 0 ? onTopic : fallbackToAll ? concrete : []).slice(0, max);
 }

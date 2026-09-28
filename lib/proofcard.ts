@@ -5,7 +5,7 @@
 // never appears as a prover. ProofPath never ran a test itself.
 
 import type { Evidence, Session } from "./types";
-import { coverage, supersededIds } from "./verify";
+import { RULES_VERSION, coverage, supersededIds } from "./verify";
 import { hasCurrentVerdicts } from "./store";
 
 export function sourceLabel(e: Evidence): string {
@@ -66,7 +66,7 @@ export function buildProofCard(session: Session, now: Date = new Date()): string
 
   lines.push(
     "",
-    `Verified by ProofPath rules on ${isoDate(now)}. Evidence is self-reported; ProofPath did not run any test itself.`,
+    `Verified by ProofPath rules v${session.rulesVersion ?? RULES_VERSION} on ${isoDate(now)}. Evidence is self-reported; ProofPath did not run any test itself.`,
   );
   return lines.join("\n");
 }

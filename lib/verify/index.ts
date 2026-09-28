@@ -4,7 +4,7 @@
 
 import type { Contract, Evidence, Requirement, Verdict } from "../types";
 import { findHypotheticals, findInjection, isAppFailure } from "./screens";
-import { hasObfuscation, matchedTargets, parseEvidence, quoteBest } from "../text";
+import { hasObfuscation, parseEvidence, quoteBest, relevance } from "../text";
 import { stance, type Stance } from "./stance";
 
 export { stance } from "./stance";
@@ -29,6 +29,14 @@ export function evidenceFlags(e: Evidence): string[] {
 
 type Judged = { evidence: Evidence; stance: Stance };
 
+/**
+ * The version of the verification rules. Bump it whenever a change to the
+ * verifier (screens, stance, aggregation, normalization, target words) can
+ * change a verdict or its reason: saved verdicts from another version are
+ * shown as stale, never as current.
+ */
+export const RULES_VERSION = "2026.09.28";
+
 export const AGENT_CLAIM_NOTE = "Agent claim: a claim, not your observation. Verify it yourself";
 
 /**
@@ -47,7 +55,7 @@ export function effectiveStance(req: Requirement, e: Evidence, linked: Requireme
   const extras: string[] = [];
   if (injection) extras.push(`it contains instruction-like text ("${injection.match}"), treated as data`);
   if (evidenceFlags(e).includes("obfuscated")) extras.push("it contained hidden or lookalike characters, normalized before judging");
-  const relevantModal = findHypotheticals(parsed.all).find((h) => matchedTargets(h.sentence, req.targets).length > 0);
+  const relevantModal = findHypotheticals(parsed.all).find((h) => relevance(h.sentence, req.targets, req.shared) !== null);
   if (relevantModal) extras.push(`it uses hypothetical wording ("${relevantModal.match}")`);
   const also = extras.length ? `; ${extras.join("; ")}` : "";
   // An agent describing its error handling says "error", "invalid", "rejected"
@@ -60,7 +68,9 @@ export function effectiveStance(req: Requirement, e: Evidence, linked: Requireme
   if (unambiguous && !injection) {
     return { kind: "contradicts", note: `${AGENT_CLAIM_NOTE}. It reports a failure: ${s.note}${also}`, quote: s.quote };
   }
-  const quote = relevantModal ? quoteBest(relevantModal.sentence, req.targets) : quoteBest(parsed.all, req.targets);
+  const quote = relevantModal
+    ? quoteBest(relevantModal.sentence, req.targets, req.shared)
+    : quoteBest(parsed.all, req.targets, req.shared);
   return { kind: "neutral", note: `${AGENT_CLAIM_NOTE}${also}`, quote };
 }
 

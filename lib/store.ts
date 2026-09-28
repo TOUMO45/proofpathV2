@@ -14,7 +14,7 @@ import {
   type Session,
   type Structured,
 } from "./types";
-import { evidenceFlags, supersededIds, verify } from "./verify";
+import { RULES_VERSION, evidenceFlags, supersededIds, verify } from "./verify";
 
 export type RequirementPatch = { text?: string; expected?: ExpectedOutcome; targets?: string[] };
 
@@ -96,7 +96,10 @@ export function reducer(state: State, action: Action): State {
     case "verify": {
       if (!state.session) return state;
       const { contract, evidence } = state.session;
-      return { ...state, session: { ...state.session, verdicts: verify(contract, evidence), stale: false } };
+      return {
+        ...state,
+        session: { ...state.session, verdicts: verify(contract, evidence), stale: false, rulesVersion: RULES_VERSION },
+      };
     }
     case "addEvidence": {
       if (!state.session || validateDraft(state.session, action.draft)) return state;
@@ -157,7 +160,8 @@ export function reducer(state: State, action: Action): State {
           const expected = action.patch.expected ?? r.expected;
           // Editing the text re-derives target words unless the patch sets them.
           const targets = action.patch.targets ?? (action.patch.text !== undefined ? targetsFor(text) : r.targets);
-          return { ...r, text, expected, targets, proofTemplate: proofTemplateFor(text, expected) };
+          const shared = (r.shared ?? []).filter((w) => targets.includes(w));
+          return { ...r, text, expected, targets, shared, proofTemplate: proofTemplateFor(text, expected) };
         });
         return { ...s, contract: { ...s.contract, requirements: reflag(next) } };
       });
@@ -279,6 +283,8 @@ export function hasCurrentVerdicts(session: Session): boolean {
 type ReadStorage = Pick<Storage, "getItem">;
 type WriteStorage = Pick<Storage, "setItem" | "removeItem">;
 
+export const RULES_NOTICE = "Rules were updated since these verdicts. Re-verify.";
+
 export const RESET_NOTICE = "Saved session couldn't be read and was reset.";
 
 /** Read and validate the saved session. Anything malformed resets safely. */
@@ -292,7 +298,14 @@ export function loadSaved(storage: ReadStorage | undefined): { session: Session 
   if (raw === null) return { session: null, notice: null };
   try {
     const parsed = SessionSchema.safeParse(JSON.parse(raw));
-    if (parsed.success) return { session: { ...parsed.data, evidence: withFlags(parsed.data.evidence) }, notice: null };
+    if (parsed.success) {
+      const session = { ...parsed.data, evidence: withFlags(parsed.data.evidence) };
+      // Verdicts made under other rules are never shown as current.
+      if (session.verdicts.length > 0 && session.rulesVersion !== RULES_VERSION) {
+        return { session: { ...session, stale: true }, notice: RULES_NOTICE };
+      }
+      return { session, notice: null };
+    }
   } catch {
     // fall through: not JSON
   }

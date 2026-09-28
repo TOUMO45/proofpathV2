@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   RESET_NOTICE,
+  RULES_NOTICE,
   STORAGE_KEY,
   hasCurrentVerdicts,
   initialState,
@@ -11,6 +12,7 @@ import {
   validateDraft,
 } from "@/lib/store";
 import { demoFixEvidence, demoSession } from "@/lib/fixtures/demo";
+import { RULES_VERSION } from "@/lib/verify";
 
 function memoryStorage(initial: Record<string, string> = {}) {
   const data = new Map(Object.entries(initial));
@@ -139,5 +141,40 @@ describe("adding, removing and superseding evidence", () => {
     st = reducer(st, { type: "addEvidence", draft: { kind: "structured", structured: demoFixEvidence[1].structured!, links: ["R3", "R4"], supersedes: "E3" } });
     st = reducer(st, { type: "verify" });
     expect(st.session!.verdicts.map((v) => v.status)).toEqual(["PROVEN", "PROVEN", "PROVEN", "PROVEN"]);
+  });
+});
+
+describe("rules version (saved verdicts from other rules are never current)", () => {
+  const verifiedDemo = () => reducer(reducer(initialState, { type: "loadDemo" }), { type: "verify" }).session!;
+
+  it("verify stamps the verdicts with the current RULES_VERSION", () => {
+    expect(verifiedDemo().rulesVersion).toBe(RULES_VERSION);
+  });
+
+  it("a saved session from the current rules loads as current", () => {
+    const storage = memoryStorage();
+    save(storage, verifiedDemo());
+    const loaded = loadSaved(storage);
+    expect(loaded.notice).toBeNull();
+    expect(hasCurrentVerdicts(loaded.session!)).toBe(true);
+  });
+
+  it.each([["an older version", "2026.09.01"], ["no version (saved before versions existed)", undefined]])(
+    "a saved session with %s loads STALE with a notice",
+    (_label, version) => {
+      const storage = memoryStorage();
+      save(storage, { ...verifiedDemo(), rulesVersion: version });
+      const loaded = loadSaved(storage);
+      expect(loaded.notice).toBe(RULES_NOTICE);
+      expect(loaded.session!.stale).toBe(true);
+      expect(hasCurrentVerdicts(loaded.session!)).toBe(false);
+      expect(loaded.session!.verdicts).toHaveLength(4); // kept, but shown as stale until re-verified
+    },
+  );
+
+  it("a session with no verdicts yet loads without the notice", () => {
+    const storage = memoryStorage();
+    save(storage, { ...demoSession(), rulesVersion: "2026.09.01" });
+    expect(loadSaved(storage).notice).toBeNull();
   });
 });

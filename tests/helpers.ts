@@ -15,7 +15,7 @@ export function test_(input: string, action: string, observed: string, links: st
 }
 
 export function req(partial: Partial<Requirement> & Pick<Requirement, "id" | "text" | "expected" | "targets">): Requirement {
-  return { proofTemplate: "", flags: [], ...partial };
+  return { proofTemplate: "", shared: [], flags: [], ...partial };
 }
 
 export function contractOf(...requirements: Requirement[]): Contract {

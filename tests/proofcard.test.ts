@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildProofCard } from "@/lib/proofcard";
 import { demoContract, demoEvidence, demoFixEvidence, demoSession } from "@/lib/fixtures/demo";
-import { verify } from "@/lib/verify";
+import { RULES_VERSION, verify } from "@/lib/verify";
 import type { Session } from "@/lib/types";
 
 const NOW = new Date("2026-09-27T12:00:00Z");
@@ -17,7 +17,7 @@ describe("Proof Card", () => {
     expect(card).toContain("- [x] **R1** Name, email and message fields are visible on the contact form — proven by E1 (self-reported)");
     expect(card).toContain("- [x] **R3** Submitting valid details succeeds — proven by E5 (self-reported)");
     expect(card).toContain("**Evidence:** 5 items (4 counted, 1 superseded)");
-    expect(card).toContain("Verified by ProofPath rules on 2026-09-27.");
+    expect(card).toContain(`Verified by ProofPath rules v${RULES_VERSION} on 2026-09-27.`);
   });
 
   it("never implies ProofPath tested anything itself", () => {

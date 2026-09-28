@@ -2,7 +2,7 @@
 // spec.md > Verifier (lib/verify), screens 1–6, in this exact order.
 
 import type { Evidence, ExpectedOutcome, Requirement } from "../types";
-import { matchedTargets, parseEvidence, quoteBest, stripWrappingQuotes, wordsMatch } from "../text";
+import { matchedTargets, ownTargets, parseEvidence, quoteBest, relevance, stripWrappingQuotes, targetOccurrences, wordsMatch } from "../text";
 import {
   findErrorSignals,
   findHypotheticals,
@@ -36,7 +36,7 @@ const OUTCOME_WORDS: Record<ExpectedOutcome, string[]> = {
 
 /** Quote a sentence only if it shares a target word with the requirement. */
 function onTopicQuote(sentence: string, req: Requirement): string {
-  return matchedTargets(sentence, req.targets).length > 0 ? clip(sentence) : "";
+  return relevance(sentence, req.targets, req.shared) ? clip(sentence) : "";
 }
 
 function clip(sentence: string): string {
@@ -78,7 +78,7 @@ export function stance(
   const hypotheticals = skipWordingScreens ? [] : findHypotheticals(wordingText);
   const hypothetical = hypotheticals.reduce<(typeof hypotheticals)[number] | null>(
     (best, h) =>
-      !best || matchedTargets(h.sentence, req.targets).length > matchedTargets(best.sentence, req.targets).length ? h : best,
+      !best || targetOccurrences(h.sentence, ownTargets(req.targets, req.shared)) > targetOccurrences(best.sentence, ownTargets(req.targets, req.shared)) ? h : best,
     null,
   );
   if (hypothetical) {
@@ -106,7 +106,7 @@ export function stance(
   // words it matches best. "Negative amounts are rejected" is about "rejects
   // negative amounts" (3 matches), not "takes a bill amount" (1 match).
   const bestMatches = (text: string): Requirement[] => {
-    const scored = linked.map((r) => ({ r, n: matchedTargets(text, r.targets).length }));
+    const scored = linked.map((r) => ({ r, n: targetOccurrences(text, ownTargets(r.targets, r.shared)) }));
     const top = Math.max(0, ...scored.map((s) => s.n));
     return top === 0 ? [] : scored.filter((s) => s.n === top).map((s) => s.r);
   };
@@ -159,11 +159,11 @@ export function stance(
   const onTopic = req.targets.length > 0 && matched.length >= needed;
   const outcome = hasOutcomeSignal(parsed.observed, req.expected);
   if (onTopic && concrete && outcome) {
-    return { kind: "supports", note: "observed", quote: quoteBest(parsed.observed || parsed.all, req.targets) };
+    return { kind: "supports", note: "observed", quote: quoteBest(parsed.observed || parsed.all, req.targets, req.shared) };
   }
 
   // 6. Neutral, with the specific reason support failed.
-  const quote = quoteBest(parsed.observed || parsed.all, req.targets);
+  const quote = quoteBest(parsed.observed || parsed.all, req.targets, req.shared);
   if (!concrete) {
     return {
       kind: "neutral",

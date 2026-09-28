@@ -134,7 +134,10 @@ export function makeRequirement(id: string, text: string, others: string[] = [],
   const clean = tidy(text);
   const expected = classify(clean);
   const result = checkClean(clean, others);
-  return { id, text: clean, proofTemplate: proofTemplateFor(clean, expected), expected, targets: targetsFor(clean, subject), flags: result.reasons };
+  const targets = targetsFor(clean, subject);
+  const subjectStems = new Set(contentWords(subject).map(stem));
+  const shared = targets.filter((t) => subjectStems.has(stem(t)));
+  return { id, text: clean, proofTemplate: proofTemplateFor(clean, expected), expected, targets, shared, flags: result.reasons };
 }
 
 type Behavior = { text: string; subject?: string };

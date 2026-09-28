@@ -17,7 +17,7 @@ import { generateContract, makeRequirement } from "@/lib/contract/generate";
 import { gapsForDisplay, recordPrefill, type RecordPrefill } from "@/lib/gap";
 import { buildProofCard } from "@/lib/proofcard";
 import { hasCurrentVerdicts, initialState, loadSaved, reducer, save } from "@/lib/store";
-import { coverage } from "@/lib/verify";
+import { RULES_VERSION, coverage } from "@/lib/verify";
 
 function browserStorage(): Storage | undefined {
   try {
@@ -122,6 +122,14 @@ export default function Home() {
           dispatch({ type: "reopenContract" });
         }}
       />
+      {state.notice && (
+        <div role="status" className="mx-auto mt-4 flex max-w-6xl items-start justify-between gap-4 px-4 sm:px-6" data-testid="workspace-notice">
+          <p className="w-full rounded-xl border border-notproven bg-sheet p-3 text-sm">{state.notice}</p>
+          <button type="button" onClick={() => dispatch({ type: "dismissNotice" })} className="mt-3 text-sm text-muted underline">
+            Dismiss
+          </button>
+        </div>
+      )}
       <main className="mx-auto grid max-w-6xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0 space-y-6">
           {proofCard && <ProofCard markdown={proofCard} />}
@@ -190,6 +198,9 @@ export default function Home() {
           />
         </aside>
       </main>
+      <footer className="mx-auto max-w-6xl px-4 pb-8 text-xs text-muted sm:px-6">
+        <span data-testid="rules-version">ProofPath rules v{RULES_VERSION}</span> · runs entirely in your browser
+      </footer>
     </div>
   );
 }
