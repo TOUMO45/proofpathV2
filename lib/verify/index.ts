@@ -3,7 +3,7 @@
 // support); else any support → PROVEN; else NOT_PROVEN.
 
 import type { Contract, Evidence, Requirement, Verdict } from "../types";
-import { findHypotheticals, findInjection } from "./screens";
+import { findHypotheticals, findInjection, isAppFailure } from "./screens";
 import { hasObfuscation, matchedTargets, parseEvidence, quoteBest } from "../text";
 import { stance, type Stance } from "./stance";
 
@@ -50,7 +50,14 @@ export function effectiveStance(req: Requirement, e: Evidence, linked: Requireme
   const relevantModal = findHypotheticals(parsed.all).find((h) => matchedTargets(h.sentence, req.targets).length > 0);
   if (relevantModal) extras.push(`it uses hypothetical wording ("${relevantModal.match}")`);
   const also = extras.length ? `; ${extras.join("; ")}` : "";
-  if (s.kind === "contradicts" && !injection) {
+  // An agent describing its error handling says "error", "invalid", "rejected"
+  // all the time ("inline error …", "the hint contradicted the error message").
+  // From a claim, only an unambiguous failure contradicts: an app failure (5xx,
+  // exception, crash, hang, timeout, stack trace), accepted input on a rejects
+  // requirement, or a negation of what the requirement says.
+  const signal = s.kind === "contradicts" ? s.note.match(/^error signal \("([^"]+)"\)/) : null;
+  const unambiguous = s.kind === "contradicts" && (!signal || isAppFailure(signal[1]));
+  if (unambiguous && !injection) {
     return { kind: "contradicts", note: `${AGENT_CLAIM_NOTE}. It reports a failure: ${s.note}${also}`, quote: s.quote };
   }
   const quote = relevantModal ? quoteBest(relevantModal.sentence, req.targets) : quoteBest(parsed.all, req.targets);

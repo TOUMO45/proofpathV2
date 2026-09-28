@@ -40,7 +40,7 @@ export function ProofGapCard({ gap, onRecord, stale = false }: { gap: ProofGap; 
               <ul className="space-y-1">
                 {gap.agentClaims.map((c) => (
                   <li key={c}>
-                    The agent claims: <span className="font-mono text-[0.9em]">{c}</span>. Check it.
+                    The agent claims: <span className="font-mono text-[0.9em]"><RichText text={c} /></span>. Check it.
                   </li>
                 ))}
               </ul>

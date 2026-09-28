@@ -8,6 +8,7 @@ import {
   findHypotheticals,
   findInjection,
   findNegatedTarget,
+  withoutQuotes,
   findVaguePhrase,
   findWentThrough,
   hasConcreteObservation,
@@ -133,13 +134,15 @@ export function stance(
     }
   }
 
-  for (const sentence of parsed.observed ? [parsed.observed] : []) {
+  // Quoted text is what the app displayed ("The bill can't be negative."), not
+  // the tester saying something didn't happen, so negation skips it.
+  for (const sentence of parsed.observed ? [withoutQuotes(parsed.observed)] : []) {
     const negTarget = findNegatedTarget(sentence, isTarget);
     const isOutcome = (w: string) => OUTCOME_WORDS[req.expected].some((o) => wordsMatch(w, o));
     const negOutcome = negTarget ? null : findNegatedTarget(sentence, isOutcome);
     const neg = negTarget ?? negOutcome;
     if (neg) {
-      const quote = quoteBest(sentence, [neg.word]);
+      const quote = quoteBest(parsed.observed, [neg.word]) || quoteBest(sentence, [neg.word]);
       if (negOutcome && !aboutThisRequirement(quote)) continue;
       return { kind: "contradicts", note: `negation ("${neg.negator} … ${neg.word}")`, quote: clip(quote) };
     }

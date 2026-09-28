@@ -80,7 +80,7 @@ export function classify(text: string): ExpectedOutcome {
     return "rejects";
   if (/\b(persists?|persisted|after (a |the )?(page )?(reload|refresh|restart)|remembers?|survives?|still there|is kept|keeps? .* after)\b/.test(t))
     return "persists";
-  if (/\b(visible|is shown|are shown|shows?|displays?|displayed|appears?|renders?|is available)\b/.test(t)) return "displays";
+  if (/\b(visible|is shown|are shown|shows?|displays?|displayed|appears?|renders?|is available|has|have|includes?)\b/.test(t)) return "displays";
   // A noun phrase with no verb ("The coverage meter", "A Try the demo button")
   // names something on screen: the claim is that it's there.
   if (!hasFiniteVerb(t)) return "displays";
@@ -89,23 +89,31 @@ export function classify(text: string): ExpectedOutcome {
 
 // Words that say nothing about which behavior a piece of evidence is about.
 const GENERIC = new Set(
-  "the app users user it is are must can cannot should visible shown available able be not does without".split(" "),
+  "the app users user it is are must can cannot should visible shown available able be not does without has have one".split(" "),
 );
 // Failure words describe what must NOT happen. As target words, "no crash" in
 // good evidence would read as a negated target (a false CONTRADICTED).
 const FAILURE_WORD = /^(crash|crashes|crashing|crashed|error|errors|fail|fails|failed|failing|failure|exception|exceptions|hang|hangs|hanging|timeout|freeze|freezes)$/;
 
-export function targetsFor(text: string): string[] {
+/**
+ * Target words: what evidence must mention. Words that distinguish this
+ * requirement come first; the subject's words ("single-page tip calculator"),
+ * shared by every requirement about it, come last, head noun first, so they
+ * never crowd out "bill" and "amount" when only 6 fit.
+ */
+export function targetsFor(text: string, subject = ""): string[] {
+  const subjectStems = new Set(contentWords(subject).map(stem));
   const seen = new Set<string>();
-  const out: string[] = [];
+  const own: string[] = [];
+  const shared: string[] = [];
   for (const w of contentWords(text)) {
     if (GENERIC.has(w) || FAILURE_WORD.test(w) || /^\d+$/.test(w)) continue;
     const s = stem(w);
     if (seen.has(s)) continue;
     seen.add(s);
-    out.push(w);
+    (subjectStems.has(s) ? shared : own).push(w);
   }
-  return out.slice(0, 6);
+  return [...own, ...shared.reverse()].slice(0, 6);
 }
 
 export function proofTemplateFor(text: string, expected: ExpectedOutcome): string {
@@ -122,16 +130,21 @@ export function proofTemplateFor(text: string, expected: ExpectedOutcome): strin
   }
 }
 
-export function makeRequirement(id: string, text: string, others: string[] = []): Requirement {
+export function makeRequirement(id: string, text: string, others: string[] = [], subject = ""): Requirement {
   const clean = tidy(text);
   const expected = classify(clean);
   const result = checkClean(clean, others);
-  return { id, text: clean, proofTemplate: proofTemplateFor(clean, expected), expected, targets: targetsFor(clean), flags: result.reasons };
+  return { id, text: clean, proofTemplate: proofTemplateFor(clean, expected), expected, targets: targetsFor(clean, subject), flags: result.reasons };
 }
 
+type Behavior = { text: string; subject?: string };
+
+// Where a noun phrase's description starts: "tip calculator in one HTML file".
+const NP_TAIL = /\s+(in|on|with|for|using|inside|as)\s+.*$/i;
+
 /** Behaviors of one sentence-level segment of the goal, as requirement texts. */
-function behaviorsOf(segment: string): string[] {
-  const out: string[] = [];
+function behaviorsOf(segment: string): Behavior[] {
+  const out: Behavior[] = [];
   let s = segment.trim();
   let imperativeVerb: string | null = null;
 
@@ -141,14 +154,25 @@ function behaviorsOf(segment: string): string[] {
     s = imp[2];
   }
 
+  // "Build a tip calculator: bill amount and tip % inputs, shows the tip and
+  // the total, and rejects a negative bill": after the colon come its features.
+  const colon = imperativeVerb ? s.match(/^([^:]+):\s+(.+)$/) : null;
+  if (colon) {
+    const subject = theNP(colon[1].replace(NP_TAIL, ""));
+    for (const b of splitBehaviors(colon[2])) {
+      out.push({ text: startsWithVerb(b) ? `${subject} ${b}` : `${subject} has ${b}`, subject });
+    }
+    return out;
+  }
+
   const rel = s.split(RELATIVE);
   if (rel.length > 1) {
     // "a dark mode toggle that persists after page reload"
     const [npWithCond, ...relParts] = rel;
     const [np] = npWithCond.split(CONDITION);
     const subject = theNP(np);
-    if (imperativeVerb && SHOWS_SOMETHING.test(imperativeVerb)) out.push(`${subject} is visible`);
-    for (const b of splitBehaviors(relParts.join(" that "))) out.push(`${subject} ${b}`);
+    if (imperativeVerb && SHOWS_SOMETHING.test(imperativeVerb)) out.push({ text: `${subject} is visible`, subject });
+    for (const b of splitBehaviors(relParts.join(" that "))) out.push({ text: `${subject} ${b}`, subject });
     return out;
   }
 
@@ -158,11 +182,11 @@ function behaviorsOf(segment: string): string[] {
     const [np, ...cond] = first.split(CONDITION);
     const condText = cond.length ? ` ${first.slice(np.length).trim()}` : "";
     const head = withoutArticle(np).split(" ").pop()?.toLowerCase() ?? "";
-    out.push(`${theNP(np)} ${UI_NOUNS.has(head) ? "is visible" : "is available"}${condText}`);
+    out.push({ text: `${theNP(np)} ${UI_NOUNS.has(head) ? "is visible" : "is available"}${condText}`, subject: theNP(np) });
     for (const b of more) {
       const [verb, ...restWords] = b.split(" ");
       const next = tokenize(b);
-      out.push(next.length && /^[a-z]+$/.test(verb) ? `The app ${thirdPerson(verb)} ${restWords.join(" ")}` : b);
+      out.push({ text: next.length && /^[a-z]+$/.test(verb) ? `The app ${thirdPerson(verb)} ${restWords.join(" ")}` : b });
     }
     return out;
   }
@@ -171,8 +195,8 @@ function behaviorsOf(segment: string): string[] {
   const parts = splitBehaviors(s);
   const subjectMatch = normalize(parts[0]).match(/^(.*?)\s+(is|are|can|cannot|must|should|does|do|will|has|have|gets)\b/i);
   const subject = subjectMatch ? subjectMatch[1] : "";
-  out.push(commaAfterLeadingCondition(parts[0]));
-  for (const b of parts.slice(1)) out.push(subject && /^[a-z]/.test(b) ? `${subject} ${b}` : b);
+  out.push({ text: commaAfterLeadingCondition(parts[0]), subject });
+  for (const b of parts.slice(1)) out.push({ text: subject && /^[a-z]/.test(b) ? `${subject} ${b}` : b, subject });
   return out;
 }
 
@@ -183,17 +207,17 @@ export function generateContract(goal: string): GenerateResult {
   }
 
   const segments = text.split(/\s*[;.!?]\s+|\s*;\s*/).map((s) => s.trim()).filter(Boolean);
-  const texts: string[] = [];
+  const items: Behavior[] = [];
   for (const seg of segments) {
     for (const b of behaviorsOf(seg)) {
-      const t = tidy(b);
-      if (t && !texts.some((x) => tokenize(x).join(" ") === tokenize(t).join(" "))) texts.push(t);
+      const t = tidy(b.text);
+      if (t && !items.some((x) => tokenize(x.text).join(" ") === tokenize(t).join(" "))) items.push({ text: t, subject: b.subject });
     }
   }
 
   const requirements: Requirement[] = [];
-  for (const t of texts.slice(0, MAX_REQUIREMENTS)) {
-    requirements.push(makeRequirement(`R${requirements.length + 1}`, t, requirements.map((r) => r.text)));
+  for (const item of items.slice(0, MAX_REQUIREMENTS)) {
+    requirements.push(makeRequirement(`R${requirements.length + 1}`, item.text, requirements.map((r) => r.text), item.subject));
   }
   return { ok: true, requirements, lowConfidence: requirements.length < 3 };
 }

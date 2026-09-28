@@ -85,6 +85,7 @@ From `prd.md > Look and Feel` (revised at the final review) and `scope.md > Insp
 ## Components
 
 ### Contract Generator (`lib/contract`)
+- Handles "Build X: a, b, and c" as features of X (a noun phrase becomes "X has …"). Target words put what distinguishes a requirement first and the shared subject's words last (head noun first).
 - Splits a goal into sentences (`;`, `.`), then into behaviors at "that/which" (a relative clause on a subject) and at ", " / "and" wherever the next word is a verb. "Name, email and message fields" stays one list. A condition ("after page reload", "without crashing") stays attached to its behavior rather than becoming a requirement of its own. Trailing punctuation is trimmed.
 - Classifies each clause (e.g. visible, rejects, succeeds, shows, persists; a noun phrase with no finite verb, like "The coverage meter", is `displays`) and attaches an **expected outcome** (see Decisions) and an "evidence that would prove it" template.
 - Target words skip failure words (crash, error, fail, timeout…), because they describe what must *not* happen: as targets, "no crash" in good evidence would read as a negated target.
@@ -182,7 +183,7 @@ PRD ref: `prd.md > States and Boundaries`, `prd.md > Evidence`, `prd.md > Contra
 PRD ref: `prd.md > Guidance While Recording Evidence`.
 
 ### Agent Replies (`lib/upload.ts`, `lib/claims.ts`, `verify > effectiveStance`)
-- **`effectiveStance`** (in `lib/verify/index.ts`): a `claim` is judged with `stance(…, { skipWordingScreens: true })`, so no stray modal sentence hides a contradiction. Its note always starts with `AGENT_CLAIM_NOTE`. Secondary notes follow for instruction-like or obfuscated text (always) and hypothetical wording (only in a sentence sharing this requirement's target words). A reported failure stays a contradiction; anything else is neutral. Verdicts, `overLinks` and `contradictingIds` all use it.
+- **`effectiveStance`** (in `lib/verify/index.ts`): a `claim` is judged with `stance(…, { skipWordingScreens: true })`, so no stray modal sentence hides a contradiction. Its note always starts with `AGENT_CLAIM_NOTE`. Secondary notes follow for instruction-like or obfuscated text (always) and hypothetical wording (only in a sentence sharing this requirement's target words). A reported failure stays a contradiction only if unambiguous (`isAppFailure`, went-through, or negation); a bare "error"/"invalid"/"rejected" in an agent's description is not. Anything else is neutral. Verdicts, `overLinks` and `contradictingIds` all use it.
 - **`claimFacts`**: sentences with numbers, quoted strings or arrows, with any leading "Verified:" label dropped. `gap.ts > claimsFor` assigns each to the linked requirement(s) whose target words it matches best.
 - **`checkUpload` / `readTextFile`**: `.md`/`.markdown`/`.txt`, a text MIME type or none, 200 KB max, read with FileReader. Used by `components/UploadLink.tsx` everywhere a paste box accepts a file.
 - **`Session.pendingClaim`**: set by `createContract` from "Check an agent's reply". `approveContract` turns it into E1 (a claim linked to all requirements) and runs `verify` once.

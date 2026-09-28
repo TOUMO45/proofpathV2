@@ -166,6 +166,11 @@ export function findNegatedTarget(
 // Error and outcome signals ----------------------------------------------
 
 // Failures of the app itself: these contradict every expected outcome.
+/** A failure of the app itself (5xx, exception, crash, hang, timeout, stack trace…). */
+export function isAppFailure(word: string): boolean {
+  return APP_FAILURE.test(word) || word === "stack trace" || word === "timed out";
+}
+
 const APP_FAILURE =
   /^(5\d\d|exception|exceptions|crash|crashes|crashed|crashing|hang|hangs|hung|hanging|timeout|timeouts|timed|freeze|froze|frozen|undefined|nan|traceback|panic)$/;
 // Signals that mean "it didn't succeed". A validation message on a `rejects`

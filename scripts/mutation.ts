@@ -42,6 +42,16 @@ const MUTATIONS: Mutation[] = [
     edits: [['  if (e.kind !== "claim") return stance(req, e, linked);', "  if (true) return stance(req, e, linked);"]],
   },
   {
+    rule: "Negation skips quoted UI text",
+    file: "lib/verify/stance.ts",
+    edits: [["[withoutQuotes(parsed.observed)]", "[parsed.observed]"]],
+  },
+  {
+    rule: "A claim contradicts only on an unambiguous failure",
+    file: "lib/verify/index.ts",
+    edits: [["(!signal || isAppFailure(signal[1]))", "true"]],
+  },
+  {
     rule: "Text normalization (invisible chars, lookalikes, fullwidth)",
     file: "lib/text.ts",
     edits: [

@@ -3,7 +3,7 @@
 // prove anything, but they are exactly what to check next, so the Proof Gap
 // lists them: "The agent claims: … Check it."
 
-import { matchedTargets, normalize, splitSentences } from "./text";
+import { matchedTargets, splitSentences } from "./text";
 
 const ARROW = /→|->|=>|⇒/;
 const QUOTED = /"[^"]{2,}"|(^|[^A-Za-z])'[^']{2,}'(?![A-Za-z])/;
@@ -29,9 +29,8 @@ function tidyClaim(sentence: string): string {
  * are returned. At most `max`.
  */
 export function claimFacts(text: string, targets: string[], { fallbackToAll = false, max = 3 } = {}): string[] {
-  const lines = normalize(text.replace(/\r?\n/g, ". "))
-    .split(/(?<=[.!?;])\s+/)
-    .flatMap((l) => splitSentences(l));
+  // per line, and never split inside a quoted UI message
+  const lines = splitSentences(text);
   const concrete = [...new Set(lines.map(tidyClaim).filter((s) => s && isConcreteClaim(s)))];
   const onTopic = concrete.filter((s) => matchedTargets(s, targets).length > 0);
   return (onTopic.length > 0 ? onTopic : fallbackToAll ? concrete : []).slice(0, max);

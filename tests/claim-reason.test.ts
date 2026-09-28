@@ -2,10 +2,7 @@
 // every reason said "hypothetical wording ('couldn't')" and quoted the agent's
 // unrelated last paragraph. Claim reasons now lead with the agent-claim rule,
 // "couldn't" is not a prediction, and quotes must be on topic.
-//
-// Fixture: tests/fixtures/tip-agent-reply-separately.md is RECONSTRUCTED around
-// the "Separately: … a checklist I couldn't find …" paragraph the learner quoted.
-// Replace it with the exact reply when available; the assertions should hold.
+// Fixture: tests/fixtures/tip-agent-reply.md, the agent's exact reply.
 
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -17,21 +14,21 @@ import { AGENT_CLAIM_NOTE, verify } from "@/lib/verify";
 import { findHypotheticals } from "@/lib/verify/screens";
 import { R1, R3, text, verdictFor } from "./helpers";
 import { demoContract, demoEvidence } from "@/lib/fixtures/demo";
-
-const demoEvidenceE3 = () => demoEvidence[2];
 import type { Evidence } from "@/lib/types";
 
-const REPLY = readFileSync(path.join(__dirname, "fixtures", "tip-agent-reply-separately.md"), "utf8");
-const REQUEST = "Build a tip calculator that takes a bill amount and a tip percentage, shows the tip and the total, and rejects negative amounts";
+const demoEvidenceE3 = () => demoEvidence[2];
+const REPLY = readFileSync(path.join(__dirname, "fixtures", "tip-agent-reply.md"), "utf8");
+const GOAL =
+  "Build a single-page tip calculator in one HTML file: bill amount and tip % inputs, shows the tip and the total, and rejects a negative bill with an error message.";
 const run = (actions: Action[], start: State = initialState) => actions.reduce(reducer, start);
 
 function checked(): State {
-  const r = generateContract(REQUEST);
+  const r = generateContract(GOAL);
   if (!r.ok) throw new Error(r.error);
-  return run([{ type: "createContract", goal: REQUEST, requirements: r.requirements, pendingClaim: REPLY }, { type: "approveContract" }]);
+  return run([{ type: "createContract", goal: GOAL, requirements: r.requirements, pendingClaim: REPLY }, { type: "approveContract" }]);
 }
 
-describe("agent reply with an unrelated 'Separately…' paragraph", () => {
+describe("the agent's exact reply, with its unrelated 'Separately…' paragraph", () => {
   it("every requirement is NOT PROVEN and its reason leads with the agent-claim rule", () => {
     const s = checked().session!;
     expect(s.verdicts).toHaveLength(3);
@@ -43,22 +40,22 @@ describe("agent reply with an unrelated 'Separately…' paragraph", () => {
 
   it("no reason quotes or cites the 'Separately…' paragraph or 'couldn't'", () => {
     for (const v of checked().session!.verdicts) {
-      expect(v.reason).not.toMatch(/Separately|checklist|couldn't|repository/i);
+      expect(v.reason).not.toMatch(/Separately|checklist|couldn't|workspace was empty/i);
       expect(v.reason).not.toContain("hypothetical wording");
     }
   });
 
-  it("a quoted sentence with its own quotes never produces doubled quotes", () => {
-    const r3 = checked().session!.verdicts.find((v) => v.requirementId === "R3")!;
-    expect(r3.reason).toContain(`"Negative amounts are rejected with the message 'Amount must be positive'"`);
+  it("no reason shows doubled quotes, even though the reply quotes UI text and code", () => {
     for (const v of checked().session!.verdicts) expect(v.reason).not.toMatch(/""|"'"|'""/);
   });
 
-  it("each reason quotes a sentence about its own requirement", () => {
+  it("each reason quotes a sentence about its own requirement, not a heading merged into a bullet", () => {
     const s = checked().session!;
     const reason = (id: string) => s.verdicts.find((v) => v.requirementId === id)!.reason;
-    expect(reason("R2")).toContain('"The tip and the total are shown below the inputs"');
-    expect(reason("R3")).toContain("Negative amounts are rejected");
+    expect(reason("R1")).toContain('"Bill amount + Tip % inputs');
+    expect(reason("R1")).not.toContain("What it does");
+    expect(reason("R2")).toMatch(/Tip on the check, Total|tip `\$22\.50`, total/);
+    expect(reason("R3")).toMatch(/[Nn]egative/);
   });
 });
 

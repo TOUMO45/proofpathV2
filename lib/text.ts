@@ -131,11 +131,28 @@ export function matchedTargets(text: string, targets: string[]): string[] {
   return targets.filter((t) => words.some((w) => wordsMatch(w, t)));
 }
 
+/**
+ * Sentences, split per line and at . ! ? ; followed by a space, but never
+ * inside double quotes: a quoted UI message like "The bill can't be negative.
+ * Enter 0 or more." stays in one piece.
+ */
 export function splitSentences(text: string): string[] {
-  return normalize(text)
-    .split(/(?<=[.!?;])\s+|\n+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const out: string[] = [];
+  for (const line of text.split(/\r?\n+/)) {
+    const t = normalize(line);
+    let start = 0;
+    let inQuote = false;
+    for (let i = 0; i < t.length; i++) {
+      const c = t[i];
+      if (c === '"') inQuote = !inQuote;
+      else if (!inQuote && /[.!?;]/.test(c) && (i + 1 === t.length || t[i + 1] === " ")) {
+        out.push(t.slice(start, i + 1).trim());
+        start = i + 1;
+      }
+    }
+    out.push(t.slice(start).trim());
+  }
+  return out.filter(Boolean);
 }
 
 /** Strip quote characters that wrap the whole string, so a reason never shows doubled quotes. */
@@ -190,7 +207,13 @@ export function parseEvidence(e: Evidence): ParsedEvidence {
     const setup = [input, action].filter((s) => s.trim()).join(". ");
     return { setup, observed, all: [setup, observed].filter(Boolean).join(". "), labeled: true };
   }
-  const text = normalize(e.text ?? "");
+  // Normalize each line but keep the line breaks: a multi-line agent reply's
+  // heading ("What it does") must not merge with the bullet under it.
+  const text = (e.text ?? "")
+    .split(/\r?\n/)
+    .map(normalize)
+    .filter(Boolean)
+    .join("\n");
   const parts: Record<string, string> = {};
   const matches = [...text.matchAll(LABEL)];
   if (matches.some((m) => m[1].toLowerCase() === "observed")) {
