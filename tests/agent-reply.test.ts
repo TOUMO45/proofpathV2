@@ -108,6 +108,21 @@ describe("end to end: agent reply → 0% → the learner's observations → 100%
     expect(reasons.R1).toContain('"Bill amount + Tip % inputs');
   });
 
+  it("second reply (incognito test): R2 never quotes the 'Done — tip-calculator.html…' opening line", () => {
+    // tests/fixtures/tip-agent-reply-2.md: the learner's exact opening line of the
+    // second reply, followed by the first reply's body (only the opening line
+    // was supplied). That line matches only shared subject words (tip,
+    // calculator, single), which used to outrank R2's real evidence.
+    const reply2 = readFileSync(path.join(__dirname, "fixtures", "tip-agent-reply-2.md"), "utf8");
+    expect(reply2.startsWith("Done — tip-calculator.html (single self-contained file")).toBe(true);
+    const s = run([{ type: "approveContract" }], checkReply(GOAL, reply2)).session!;
+    const reasons = Object.fromEntries(s.verdicts.map((v) => [v.requirementId, v.reason]));
+    expect(reasons.R2).not.toMatch(/Done — tip-calculator\.html/);
+    expect(reasons.R2).toContain('"Math: `125.00 @ 18%` → tip `$22.50`, total `147.50`"');
+    for (const v of s.verdicts) expect(v.reason).not.toContain("self-contained file");
+    for (const g of gapsForDisplay(s).gaps) expect(g.agentClaims.join(" ")).not.toContain("self-contained file");
+  });
+
   it("AGENT CLAIMS lists are on topic: R2 no longer lists the 'Motion is limited to one tick' line", () => {
     const byReq = Object.fromEntries(gapsForDisplay(approved().session!).gaps.map((g) => [g.requirementId, g.agentClaims]));
     expect(byReq.R2).toEqual(["Math: `125.00 @ 18%` → tip `$22.50`, total `147.50`"]);
