@@ -33,6 +33,11 @@ const OUTCOME_WORDS: Record<ExpectedOutcome, string[]> = {
   persists: ["persist", "remain", "stay", "keep", "kept", "save"],
 };
 
+/** Quote a sentence only if it shares a target word with the requirement. */
+function onTopicQuote(sentence: string, req: Requirement): string {
+  return matchedTargets(sentence, req.targets).length > 0 ? clip(sentence) : "";
+}
+
 function clip(sentence: string): string {
   let q = stripWrappingQuotes(sentence.replace(/^[-*+]\s+/, "").replace(/[.;,]+$/, ""));
   if (q.length > 160) q = q.slice(0, 157).trimEnd() + "…";
@@ -44,11 +49,16 @@ function clip(sentence: string): string {
  *   Used to decide which requirement an error sentence is about, so one
  *   observation only contradicts the requirement whose success condition it breaks.
  */
-export function stance(req: Requirement, evidence: Evidence, linked: Requirement[]): Stance {
+export function stance(
+  req: Requirement,
+  evidence: Evidence,
+  linked: Requirement[],
+  { skipWordingScreens = false }: { skipWordingScreens?: boolean } = {},
+): Stance {
   const parsed = parseEvidence(evidence);
 
   // 1. Injection: reads every field. Untrusted evidence contributes nothing.
-  const injection = findInjection(parsed.all);
+  const injection = skipWordingScreens ? null : findInjection(parsed.all);
   if (injection) {
     return {
       kind: "untrusted",
@@ -64,7 +74,7 @@ export function stance(req: Requirement, evidence: Evidence, linked: Requirement
   // 2. Hypothetical / modal wording. With several such sentences, cite the one
   // most about this requirement ("should reject invalid emails" for R2,
   // "will now show a confirmation" for R4); ties go to the first.
-  const hypotheticals = findHypotheticals(wordingText);
+  const hypotheticals = skipWordingScreens ? [] : findHypotheticals(wordingText);
   const hypothetical = hypotheticals.reduce<(typeof hypotheticals)[number] | null>(
     (best, h) =>
       !best || matchedTargets(h.sentence, req.targets).length > matchedTargets(best.sentence, req.targets).length ? h : best,
@@ -74,18 +84,18 @@ export function stance(req: Requirement, evidence: Evidence, linked: Requirement
     return {
       kind: "neutral",
       note: `hypothetical wording ("${hypothetical.match}") is a prediction, not an observation`,
-      quote: clip(hypothetical.sentence),
+      quote: onTopicQuote(hypothetical.sentence, req),
     };
   }
 
   // 3. Vague approval with no concrete observation behind it.
   const concrete = hasConcreteObservation(parsed.observed, parsed.labeled);
-  const vague = findVaguePhrase(wordingText);
+  const vague = skipWordingScreens ? null : findVaguePhrase(wordingText);
   if (vague && !concrete) {
     return {
       kind: "neutral",
       note: `vague approval ("${vague.match}") with no concrete observation`,
-      quote: clip(vague.sentence),
+      quote: onTopicQuote(vague.sentence, req),
     };
   }
 

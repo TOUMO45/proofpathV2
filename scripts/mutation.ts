@@ -39,7 +39,7 @@ const MUTATIONS: Mutation[] = [
   {
     rule: "Agent claims never prove on their own",
     file: "lib/verify/index.ts",
-    edits: [['  if (e.kind !== "claim") return s;', "  return s;"]],
+    edits: [['  if (e.kind !== "claim") return stance(req, e, linked);', "  if (true) return stance(req, e, linked);"]],
   },
   {
     rule: "Text normalization (invisible chars, lookalikes, fullwidth)",

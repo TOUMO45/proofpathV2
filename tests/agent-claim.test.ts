@@ -21,11 +21,14 @@ describe("an AI agent's 'done' message is a claim, not proof", () => {
     expect(r4.reason).toContain('hypothetical wording ("will")');
   });
 
-  it("is screened exactly like text: vague wording gets the same verdict and reason", () => {
+  it("vague wording: same verdict as text, but the claim's reason leads with the agent-claim rule", () => {
     const body = "Done! Everything works as expected and all tests pass.";
     const asClaim = verify(demoContract, [claim(body, ["R2", "R4"])]);
     const asText = verify(demoContract, [{ ...claim(body, ["R2", "R4"]), kind: "text" }]);
-    expect(asClaim).toEqual(asText);
+    expect(asClaim.map((v) => v.status)).toEqual(asText.map((v) => v.status));
+    for (const v of asClaim.filter((x) => x.evidenceIds.length)) {
+      expect(v.reason).toMatch(/^Not proven\. E90: Agent claim: a claim, not your observation\. Verify it yourself/);
+    }
   });
 
   it("can never prove a requirement on its own: concrete wording that proves as text is NOT PROVEN as a claim", () => {

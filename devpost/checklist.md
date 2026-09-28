@@ -165,3 +165,9 @@ Activity mode:
 - Linking a reply to every requirement exposed a relevance flaw: an error word in "Negative amounts are rejected" counted against "takes a bill amount" because both mention an amount. A sentence is now attributed to the linked requirement(s) it matches **best**. Proof Gap claims use the same rule.
 - Success outcome words gained "accepted", "calculated", "computed", "converted", "updated" and "processed". A real observation for "takes a bill amount" ("amount accepted; tip calculated") was otherwise not recognized as success. "Accepted" on a `rejects` requirement still contradicts.
 - The agent-reply fixture (`tests/fixtures/tip-agent-reply.md`) is reconstructed around the line the learner quoted, until the exact reply is supplied.
+- Real agent-reply test, round 2 (learner findings): the verdicts were right (all NOT PROVEN), but every reason said "hypothetical wording ('couldn't')" and quoted the agent's unrelated "Separately…" paragraph. Fixed:
+  - (1) Claim reasons always lead with the agent-claim rule; screen findings follow only when relevant.
+  - (2) "couldn't" / "could not" are no longer hypothetical ("could" still is).
+  - (3) Neutral and support quotes come only from sentences sharing target words, otherwise none. A contradiction or injection still quotes the failure or instruction it found, because that sentence is the evidence ("Page shows 500 Internal Server Error" shares no target word with R3).
+  - (4) A fixture reconstructed around the quoted paragraph (`tests/fixtures/tip-agent-reply-separately.md`) until the exact reply is supplied.
+- Claims are now judged without the wording screens (they are composed into the note instead), so a hypothetical sentence anywhere in a long reply can no longer hide a reported failure.

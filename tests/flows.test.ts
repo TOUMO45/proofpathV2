@@ -35,7 +35,12 @@ describe("real-world flow: your own goal, an agent's 'done' message", () => {
     );
     const verdicts = st.session!.verdicts;
     expect(verdicts.map((v) => v.status)).toEqual(["NOT_PROVEN", "NOT_PROVEN"]);
-    for (const v of verdicts) expect(v.reason).toContain('hypothetical wording ("will")');
+    // Every reason leads with the agent-claim rule; the "will" note is added only
+    // where the modal sentence is about the requirement (R2: persists after reload).
+    for (const v of verdicts) expect(v.reason).toMatch(/^Not proven\. E1: Agent claim: a claim, not your observation\. Verify it yourself/);
+    expect(verdicts[0].reason).not.toContain('"will"');
+    expect(verdicts[1].reason).toContain('hypothetical wording ("will")');
+    expect(verdicts[1].reason).toContain('"Your preference will persist after page reload"');
     expect(st.session!.evidence[0].kind).toBe("claim");
   });
 

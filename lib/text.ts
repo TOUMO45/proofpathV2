@@ -150,6 +150,8 @@ export function stripWrappingQuotes(text: string): string {
 /**
  * Quote the sentence with the most target-word overlap (ties: the first one),
  * trimmed of wrapping quotes and trailing punctuation, capped at 160 characters.
+ * If no sentence shares a target word, quote nothing: an unrelated sentence
+ * would only mislead.
  */
 export function quoteBest(text: string, targets: string[]): string {
   const sentences = splitSentences(text);
@@ -163,6 +165,7 @@ export function quoteBest(text: string, targets: string[]): string {
       bestScore = score;
     }
   }
+  if (bestScore <= 0) return "";
   let q = stripWrappingQuotes(best.replace(/^[-*+]\s+/, "").replace(/[.;,]+$/, ""));
   if (q.length > 160) q = q.slice(0, 157).trimEnd() + "…";
   return q;

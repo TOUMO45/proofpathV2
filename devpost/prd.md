@@ -140,7 +140,7 @@ Source: `scope.md > What "Working" Looks Like` (item 3).
 There are three kinds of evidence:
 - **Text:** a free-form observation.
 - **Structured test:** three fields, **Input / Action / Observed**.
-- **Agent claim:** an AI agent's own "done" message, pasted as-is or uploaded as a `.md`/`.txt` file. It is screened like text (hypothetical, vague, injection, obfuscation), but **an agent claim can never make a requirement PROVEN on its own**. With no human observation, the verdict is NOT PROVEN, with the reason "Agent claim: a claim, not your observation. Verify it yourself." A claim that reports a failure still contradicts. The UI labels it **AGENT CLAIM**. (Learner decision after a real-agent test: the agent wrote concrete past-tense claims, "Verified: 125.00 @ 18% → tip $22.50", that the old rules would have accepted as proof.)
+- **Agent claim:** an AI agent's own "done" message, pasted as-is or uploaded as a `.md`/`.txt` file. It is screened like text (hypothetical, vague, injection, obfuscation), but **an agent claim can never make a requirement PROVEN on its own**. With no human observation, the verdict is NOT PROVEN, and the reason **always leads** with "Agent claim: a claim, not your observation. Verify it yourself." Other screen findings follow as secondary notes only when relevant: instruction-like or obfuscated text always, hypothetical wording only in a sentence about that requirement. A claim that reports a failure still contradicts. The UI labels it **AGENT CLAIM**. (Learner decision after a real-agent test: the agent wrote concrete past-tense claims, "Verified: 125.00 @ 18% → tip $22.50", that the old rules would have accepted as proof.)
 
 Each item gets an ID (E1, E2, …).
 - **Linking:** one item can link to several requirements, because real observations often cover several things. The developer always sets links explicitly; ProofPath never links automatically.
@@ -183,7 +183,7 @@ Each requirement is judged separately, using only the evidence linked to it that
 - **NOT PROVEN** means nothing concrete supports it.
 - **CONTRADICTED** means an observation conflicts with that requirement's success condition.
 
-Every verdict has a reason that quotes the evidence and names the evidence IDs it used. An evidence item contradicts a requirement only if what it observed contradicts *that* requirement's success condition. So "form submitted, 'Thanks' shown" can prove both "valid submission succeeds" and "confirmation shown" while contradicting nothing else it's linked to. When unsure, the verdict is NOT PROVEN: a false PROVEN is the worst failure.
+Every verdict has a reason that names the evidence IDs it used and quotes the evidence sentence about that requirement. A sentence that shares no target words with the requirement is never quoted; the exception is the failure or instruction a contradiction or injection finding is about, which is the evidence itself. "couldn't" / "could not" report a past inability and are not hypothetical wording. An evidence item contradicts a requirement only if what it observed contradicts *that* requirement's success condition. So "form submitted, 'Thanks' shown" can prove both "valid submission succeeds" and "confirmation shown" while contradicting nothing else it's linked to. When unsure, the verdict is NOT PROVEN: a false PROVEN is the worst failure.
 
 The rules below are verified by automated tests. Each bluff in the list must be rejected:
 - [ ] **Hypothetical wording** ("would be blocked", "should work") → NOT PROVEN. The reason names the hypothetical wording.

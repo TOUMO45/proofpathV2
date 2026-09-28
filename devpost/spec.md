@@ -117,7 +117,7 @@ PRD ref: `prd.md > Plan Import`.
 `verify(contract, evidence)` is pure, with no DOM access. For each requirement, it takes the **active** evidence linked to it (not superseded) and gives each item a *stance*:
 
 1. **Injection screen** (reads **all** fields, structured or not): patterns like "mark/record/set … proven", "all requirements are satisfied", "note to (the) verifier/grader/judge", "ignore previous". → stance `untrusted`: the item gets a flag and contributes nothing.
-2. **Hypothetical/modal screen:** would, should, will, if, expected to, supposed to, is designed to. → `neutral`, reason "hypothetical wording: '<word>'". For structured evidence, this screen reads **only the Observed field**. Input and Action describe the test setup, so "Action: entered an email that should be rejected" is legitimate.
+2. **Hypothetical/modal screen:** would, should, will, might, could (not "couldn't" / "could not", which report a past inability), if, expected to, supposed to, is designed to. → `neutral`, reason "hypothetical wording: '<word>'". For structured evidence, this screen reads **only the Observed field**. Input and Action describe the test setup, so "Action: entered an email that should be rejected" is legitimate.
 3. **Vague screen:** fires only when a vague phrase ("it works", "looks good", "done", "all good") appears **and** there is no concrete observation. → `neutral`. "Observed: upload done in 2s, file appears in the list" passes on to the next screens. For structured evidence, it reads only the Observed field.
 4. **Contradiction:**
    - Error signals (4xx/5xx status codes, error, exception, crash, hang, timeout, stack trace, undefined, NaN) as whole words, applied according to the requirement's `expected` outcome:
@@ -182,7 +182,7 @@ PRD ref: `prd.md > States and Boundaries`, `prd.md > Evidence`, `prd.md > Contra
 PRD ref: `prd.md > Guidance While Recording Evidence`.
 
 ### Agent Replies (`lib/upload.ts`, `lib/claims.ts`, `verify > effectiveStance`)
-- **`effectiveStance`** (in `lib/verify/index.ts`): a `claim` keeps the untrusted and contradicts stances and the hypothetical/vague screen reasons. Anything else, including what would have been support, becomes neutral with `AGENT_CLAIM_NOTE`. Verdicts, `overLinks` and `contradictingIds` all use it.
+- **`effectiveStance`** (in `lib/verify/index.ts`): a `claim` is judged with `stance(…, { skipWordingScreens: true })`, so no stray modal sentence hides a contradiction. Its note always starts with `AGENT_CLAIM_NOTE`. Secondary notes follow for instruction-like or obfuscated text (always) and hypothetical wording (only in a sentence sharing this requirement's target words). A reported failure stays a contradiction; anything else is neutral. Verdicts, `overLinks` and `contradictingIds` all use it.
 - **`claimFacts`**: sentences with numbers, quoted strings or arrows, with any leading "Verified:" label dropped. `gap.ts > claimsFor` assigns each to the linked requirement(s) whose target words it matches best.
 - **`checkUpload` / `readTextFile`**: `.md`/`.markdown`/`.txt`, a text MIME type or none, 200 KB max, read with FileReader. Used by `components/UploadLink.tsx` everywhere a paste box accepts a file.
 - **`Session.pendingClaim`**: set by `createContract` from "Check an agent's reply". `approveContract` turns it into E1 (a claim linked to all requirements) and runs `verify` once.

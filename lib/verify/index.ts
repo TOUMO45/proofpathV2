@@ -3,8 +3,8 @@
 // support); else any support → PROVEN; else NOT_PROVEN.
 
 import type { Contract, Evidence, Requirement, Verdict } from "../types";
-import { findInjection } from "./screens";
-import { hasObfuscation, parseEvidence } from "../text";
+import { findHypotheticals, findInjection } from "./screens";
+import { hasObfuscation, matchedTargets, parseEvidence, quoteBest } from "../text";
 import { stance, type Stance } from "./stance";
 
 export { stance } from "./stance";
@@ -32,22 +32,33 @@ type Judged = { evidence: Evidence; stance: Stance };
 export const AGENT_CLAIM_NOTE = "Agent claim: a claim, not your observation. Verify it yourself";
 
 /**
- * The stance that counts toward a verdict. An agent's claim is screened like
- * any text: it can be untrusted, hypothetical, or contradict a requirement
- * (it reported a failure). But it never supports one: with no human
- * observation, it is only a claim.
+ * The stance that counts toward a verdict. An agent's claim never supports a
+ * requirement: with no human observation it is only a claim, and its reason
+ * always leads with that rule. It can still contradict (it reported a
+ * failure). Screen findings follow as secondary notes, and only when they
+ * matter here: instruction-like or obfuscated text always, hypothetical
+ * wording only in a sentence about this requirement.
  */
 export function effectiveStance(req: Requirement, e: Evidence, linked: Requirement[]): Stance {
-  const s = stance(req, e, linked);
-  if (e.kind !== "claim") return s;
-  if (s.kind === "untrusted" || s.kind === "contradicts") return s;
-  // keep the screens' own findings; they say more than the generic note
-  if (s.kind === "neutral" && /^(hypothetical wording|vague approval)/.test(s.note)) return s;
-  return { kind: "neutral", note: AGENT_CLAIM_NOTE, quote: s.quote };
+  if (e.kind !== "claim") return stance(req, e, linked);
+  const parsed = parseEvidence(e);
+  const injection = findInjection(parsed.all);
+  const s = stance(req, e, linked, { skipWordingScreens: true });
+  const extras: string[] = [];
+  if (injection) extras.push(`it contains instruction-like text ("${injection.match}"), treated as data`);
+  if (evidenceFlags(e).includes("obfuscated")) extras.push("it contained hidden or lookalike characters, normalized before judging");
+  const relevantModal = findHypotheticals(parsed.all).find((h) => matchedTargets(h.sentence, req.targets).length > 0);
+  if (relevantModal) extras.push(`it uses hypothetical wording ("${relevantModal.match}")`);
+  const also = extras.length ? `; ${extras.join("; ")}` : "";
+  if (s.kind === "contradicts" && !injection) {
+    return { kind: "contradicts", note: `${AGENT_CLAIM_NOTE}. It reports a failure: ${s.note}${also}`, quote: s.quote };
+  }
+  const quote = relevantModal ? quoteBest(relevantModal.sentence, req.targets) : quoteBest(parsed.all, req.targets);
+  return { kind: "neutral", note: `${AGENT_CLAIM_NOTE}${also}`, quote };
 }
 
 function cite(j: Judged): string {
-  return `${j.evidence.id}: ${j.stance.note} — "${j.stance.quote}"`;
+  return j.stance.quote ? `${j.evidence.id}: ${j.stance.note} — "${j.stance.quote}"` : `${j.evidence.id}: ${j.stance.note}`;
 }
 
 function ids(list: Judged[]): string {
@@ -108,7 +119,9 @@ export function verifyRequirement(req: Requirement, contract: Contract, evidence
     return {
       requirementId: req.id,
       status: "PROVEN",
-      reason: `Proven by ${supports.map((j) => `${j.evidence.id}, which observed "${j.stance.quote}"`).join("; ")}.` + ignored,
+      reason:
+        `Proven by ${supports.map((j) => (j.stance.quote ? `${j.evidence.id}, which observed "${j.stance.quote}"` : j.evidence.id)).join("; ")}.` +
+        ignored,
       evidenceIds: supports.map((j) => j.evidence.id),
     };
   }

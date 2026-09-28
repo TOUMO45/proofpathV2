@@ -43,7 +43,10 @@ export function findInjection(text: string): Hit | null {
 
 // 2. Hypothetical / modal wording: a prediction, not an observation.
 const HYPOTHETICAL: RegExp[] = [
-  /\b(would|should|will|could|might)(?:n't)?\b/i,
+  /\b(would|should|will|might)(?:n't)?\b/i,
+  // "could" predicts ("it could work"); "couldn't" / "could not" report a past
+  // inability ("a checklist I couldn't find"), so they are not hypothetical.
+  /\bcould\b(?!n't)(?!\s+not\b)/i,
   /\bwon't\b/i,
   /\b\w+'(?:ll|d)\b/i,
   /\bif\b/i,
