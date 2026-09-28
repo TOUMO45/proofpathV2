@@ -109,23 +109,23 @@ Build mode: fast (chosen in `4-spec`: verification and a commit for every slice,
 ## Hands-on Checkpoints
 
 - [x] Early usable behavior explored — after slice 2 (demo workspace, look and feel, verdict and reason display). Feedback: keep the audit-report look, the reasons and the quoted evidence. Add an "Agent claim" evidence kind and "self-reported" labels on the Proof Card, both folded into slice 3.
-- [ ] Final kick-the-tires exploration and feedback completed
+- [x] Final kick-the-tires exploration and feedback completed — self-audit table; three rounds of learner feedback; a real-agent test (tip calculator) whose exact reply and three learner observations are now the end-to-end fixture.
 
 ## Final Review
 
-- [ ] Final review complete — feedback resolved and learner confirms ready to ship
+- [x] Final review complete — feedback resolved and learner confirms ready to ship (learner: "Final review approved" after the quoted-negation gate passed: 285 tests, 14 mutation rules with no survivors, CI and Pages green, localhost and live browser checks).
 
 ## Code Tour and App Map
 
-- [ ] Learning activity complete — guided route, focused alternative, prior practice connected, or brief recap
-- [ ] Optional edit and transfer reflection addressed — offered/declined/already covered/not applicable as appropriate
-- [ ] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
+- [x] Learning activity complete — prior practice connected (the learner's own real-world testing was the practice; see below)
+- [x] Optional edit and transfer reflection addressed — edit not applicable (no code tour); reflection question offered at hand-off
+- [x] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
 
-Activity and evidence:
-Route and stops:
-Edit outcome:
-Reflection:
-Activity mode:
+Activity and evidence: Focused alternative via prior practice. The learner's goal was acceptance criteria an agent can't satisfy with a bluff. Their real-agent test exposed four verifier bugs the existing tests missed, and their review of the quoted-negation fix exposed an evasion ("Payment not processed" in quotes). The resolution wrote the criterion in both directions (`tests/quoted-negation.test.ts`: R3 must stay PROVEN; the quoted failure must be CONTRADICTED), with both halves guarded in `scripts/mutation.ts`.
+Route and stops: Reference route only (not toured): `components/EvidenceForm.tsx` submit → `lib/store.ts` addEvidence/verify → `lib/verify/index.ts` verifyRequirement/effectiveStance and `lib/verify/stance.ts` stance.
+Edit outcome: Not applicable (no code tour; prior practice counted).
+Reflection: Offered at hand-off (optional).
+Activity mode: Prior practice connected, plus the app map at `devpost/app-map.html` (snapshot of commit 4dd46ab).
 
 ## Revisions
 

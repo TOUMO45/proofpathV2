@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ProofPath App Map</title>
+<style>
+  :root { --paper:#f5f9e8; --sheet:#fcfef5; --ink:#16161a; --muted:#55594a; --rule:#dde6c6; --accent:#3f6212; --lime:#e4f5b5; --proven:#1e7a46; --notproven:#8a5a00; --contra:#b42318; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 1.9rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+  h2 { font-size: 1.15rem; margin: 36px 0 8px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .card { background: var(--sheet); border: 1px solid var(--rule); border-radius: 16px; padding: 16px 18px; margin: 12px 0; }
+  code { font: 0.9em ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace; background: #ecf3d6; padding: 0 .3em; border-radius: .3em; }
+  .pill { display:inline-block; border:1.5px solid #6f9a2a; background:var(--lime); border-radius:999px; padding:1px 10px; font-size:.8rem; font-weight:600; }
+  ol.route > li { margin: 10px 0; }
+  .muted { color: var(--muted); }
+  details { margin: 8px 0; }
+  summary { cursor: pointer; font-weight: 600; }
+  a { color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  svg { width: 100%; height: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+  td { border-top: 1px solid var(--rule); padding: 6px 8px; vertical-align: top; }
+</style>
+</head>
+<body>
+<main>
+  <span class="pill">App map · snapshot of commit 4dd46ab</span>
+  <h1>ProofPath</h1>
+  <p class="sub">A verifier that refuses to accept "done" without proof. This page shows where one real action travels through the code, and where to start when you want to change something.</p>
+
+  <h2>The pieces</h2>
+  <div class="card">
+    <p><strong>Everything runs in the browser.</strong> There is no server, no API key and no network call. Four kinds of pure functions do the work, and the screens only display what they return.</p>
+    <ul>
+      <li><strong>Contract</strong> (<code>lib/contract/</code>): turns a goal into 1–7 clean requirements, each with an expected outcome and target words.</li>
+      <li><strong>Verifier</strong> (<code>lib/verify/</code>): judges each requirement against the evidence linked to it: PROVEN, NOT PROVEN or CONTRADICTED, with a quoted reason.</li>
+      <li><strong>Gaps and card</strong> (<code>lib/gap.ts</code>, <code>lib/proofcard.ts</code>): the next test to run for each open requirement, and the Markdown Proof Card at 100%.</li>
+      <li><strong>Store</strong> (<code>lib/store.ts</code>): one reducer and one <code>stale</code> flag, saved to the browser's localStorage.</li>
+    </ul>
+  </div>
+
+  <h2>One action: you add evidence and press Verify</h2>
+  <div class="card">
+    <svg viewBox="0 0 820 170" role="img" aria-labelledby="flowTitle flowDesc">
+      <title id="flowTitle">From an observation to a verdict</title>
+      <desc id="flowDesc">Evidence form, then the store's addEvidence and verify actions, then the verifier's stance for each requirement and evidence item, then the verdict shown in the Proof Graph and the gaps or Proof Card.</desc>
+      <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">
+        <rect x="8" y="40" width="170" height="80" rx="14" fill="#fcfef5" stroke="#16161a" stroke-width="1.5"/>
+        <text x="93" y="72" text-anchor="middle" font-weight="600">Evidence form</text>
+        <text x="93" y="94" text-anchor="middle" fill="#55594a">EvidenceForm.tsx</text>
+        <rect x="218" y="40" width="170" height="80" rx="14" fill="#fcfef5" stroke="#16161a" stroke-width="1.5"/>
+        <text x="303" y="72" text-anchor="middle" font-weight="600">Store</text>
+        <text x="303" y="94" text-anchor="middle" fill="#55594a">addEvidence · verify</text>
+        <rect x="428" y="40" width="170" height="80" rx="14" fill="#e4f5b5" stroke="#16161a" stroke-width="1.5"/>
+        <text x="513" y="66" text-anchor="middle" font-weight="600">Verifier</text>
+        <text x="513" y="86" text-anchor="middle" fill="#16161a">normalize → screens</text>
+        <text x="513" y="104" text-anchor="middle" fill="#16161a">→ stance → verdict</text>
+        <rect x="638" y="40" width="174" height="80" rx="14" fill="#fcfef5" stroke="#16161a" stroke-width="1.5"/>
+        <text x="725" y="72" text-anchor="middle" font-weight="600">What you see</text>
+        <text x="725" y="94" text-anchor="middle" fill="#55594a">verdict · gap · card</text>
+        <g stroke="#3f6212" stroke-width="2" fill="none" marker-end="url(#arrow)">
+          <line x1="178" y1="80" x2="214" y2="80"/>
+          <line x1="388" y1="80" x2="424" y2="80"/>
+          <line x1="598" y1="80" x2="634" y2="80"/>
+        </g>
+        <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3f6212"/></marker></defs>
+        <text x="410" y="150" text-anchor="middle" fill="#55594a">Nothing leaves the browser; the session is saved to localStorage.</text>
+      </g>
+    </svg>
+  </div>
+
+  <h2>Reference route: three stops</h2>
+  <p class="muted">A reference route through the current code, not a tour you were walked through. Search for the anchor in quotes to jump to each stop.</p>
+  <ol class="route">
+    <li class="card"><strong>The form builds a draft.</strong> <code>components/EvidenceForm.tsx</code>, search <code>function submit</code>. It checks the draft with <code>validateDraft</code> (at least one link, a real supersede target) and hands it to the store. "Record this test" pre-fills Input and Action here, never Observed.</li>
+    <li class="card"><strong>The store records it and marks verdicts stale.</strong> <code>lib/store.ts</code>, search <code>case "addEvidence"</code>, then <code>case "verify"</code>. A new item gets the next ID (never reused) and <code>stale: true</code>; Verify calls the verifier and clears <code>stale</code>.</li>
+    <li class="card"><strong>The verifier decides.</strong> <code>lib/verify/index.ts</code>, search <code>export function verifyRequirement</code> and <code>export function effectiveStance</code>; then <code>lib/verify/stance.ts</code>, search <code>export function stance</code>. Every item is normalized (<code>lib/text.ts</code>, <code>export function normalize</code>), then screened in a fixed order: injection → hypothetical → vague → contradiction → support. Any contradiction means CONTRADICTED; an agent claim never proves anything on its own. The result appears in <code>components/ProofGraph.tsx</code>, with gaps from <code>lib/gap.ts</code> (<code>buildGaps</code>) and the card from <code>lib/proofcard.ts</code> (<code>buildProofCard</code>).</li>
+  </ol>
+
+  <h2>To change this, start here</h2>
+  <table>
+    <tr><td>Which words count as a prediction ("would", "should"…)</td><td><code>lib/verify/screens.ts</code>, <code>const HYPOTHETICAL</code></td></tr>
+    <tr><td>When quoted UI text counts as a negation</td><td><code>lib/verify/stance.ts</code>, <code>const negationText</code></td></tr>
+    <tr><td>Which words evidence must mention for a goal</td><td><code>lib/contract/generate.ts</code>, <code>export function targetsFor</code></td></tr>
+    <tr><td>The built-in demo (contract and fixture evidence)</td><td><code>lib/fixtures/demo.ts</code>, <code>export const demoContract</code></td></tr>
+    <tr><td>Colors, pills, buttons and motion</td><td><code>app/globals.css</code>, <code>@theme</code> and the <code>.btn</code> / <code>.pill</code> / <code>.card</code> classes</td></tr>
+    <tr><td>A new verifier rule</td><td>Add the rule, a test for the case it must catch, and a line in <code>scripts/mutation.ts</code> (<code>const MUTATIONS</code>) so a test fails if the rule is ever switched off.</td></tr>
+  </table>
+
+  <h2>A practice to reuse</h2>
+  <div class="card">
+    <p><strong>Write every rule's acceptance criteria in both directions, then prove the tests are load-bearing.</strong></p>
+    <p>When quoted UI text was first exempted from negation, the fix made a real observation pass: R3, where the app shows "The bill can't be negative. Enter 0 or more.". It also opened an evasion: a failure hidden in quotes ("Payment not processed") would pass too. Writing the pass case <em>and</em> the evasion case as tests (<code>tests/quoted-negation.test.ts</code>) pinned the rule to <code>rejects</code> requirements only. Two lines in <code>scripts/mutation.ts</code> then prove that switching either half off fails a test.</p>
+    <p>On another project: for each acceptance criterion, write one test that a correct result passes and one that the most likely bluff or evasion fails. Then break the code on purpose and check that a test goes red. Otherwise the test isn't protecting anything.</p>
+  </div>
+
+  <h2>Run it again</h2>
+  <div class="card">
+    <p><code>npm install</code> then <code>npm run dev</code> and open <code>http://localhost:3000</code>. Checks: <code>npm run verify:all</code> (lint, typecheck, tests, build) and <code>npm run mutation</code>. The live site is <a href="https://toumo45.github.io/proofpathV2/">toumo45.github.io/proofpathV2</a>.</p>
+    <details><summary>About this map</summary><p class="muted">This is a snapshot of commit 4dd46ab. Paths and symbols were checked against that commit; later changes can make it drift. The planning documents it grew from are in <code>devpost/</code>: scope, PRD, spec and the build checklist.</p></details>
+  </div>
+</main>
+</body>
+</html>
