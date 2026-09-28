@@ -17,6 +17,8 @@ const BEHAVIOR_VERBS = new Set(
     "changes keeps supports allows lets exports imports renders sorts filters searches counts clears resets " +
     "prevents warns notifies prints writes reads parses outputs crashes fails works runs starts stops refreshes " +
     "disables enables hides reveals marks moves copies downloads uploads emails " +
+    "takes calculates computes adds removes gives uses makes rounds formats splits applies passes fixes " +
+    "tracks generates produces includes contains requires asks prompts " +
     "save convert handle send reject block load return redirect validate update create delete store remember " +
     "switch toggle appear submit accept open close change keep support allow render sort clear prevent warn notify " +
     "write read parse crash fail work run start stop refresh disable enable hide reveal mark move copy " +

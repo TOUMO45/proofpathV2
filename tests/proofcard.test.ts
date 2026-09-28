@@ -32,11 +32,15 @@ describe("Proof Card", () => {
     );
   });
 
-  it("labels an agent's claim as 'agent claim', not self-reported", () => {
-    const e = { ...demoFixEvidence[0], id: "E7", kind: "claim" as const, structured: undefined, text: "Entered the invalid email and pressed Send: validation message 'Please enter a valid email' shown, form not submitted." };
-    const evidence = [demoEvidence[0], e, demoFixEvidence[1], demoEvidence[2]];
-    const card = buildProofCard(verified(evidence), NOW)!;
-    expect(card).toContain("proven by E7 (agent claim)");
+  it("an agent claim can never appear as a prover: with only a claim for R2 there is no card", () => {
+    const text = "Entered the invalid email and pressed Send: validation message 'Please enter a valid email' shown, form not submitted.";
+    const claim = { ...demoFixEvidence[0], id: "E7", kind: "claim" as const, structured: undefined, text };
+    const evidence = [demoEvidence[0], claim, demoFixEvidence[1], demoEvidence[2]];
+    expect(buildProofCard(verified(evidence), NOW)).toBeNull();
+    // the same words typed as the developer's own observation do prove R2
+    const card = buildProofCard(verified([demoEvidence[0], { ...claim, kind: "text" as const }, demoFixEvidence[1], demoEvidence[2]]), NOW)!;
+    expect(card).toContain("proven by E7 (self-reported)");
+    expect(card).not.toContain("agent claim");
   });
 
   it("marks demo fixture data", () => {

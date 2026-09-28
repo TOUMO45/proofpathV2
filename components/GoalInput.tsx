@@ -3,27 +3,34 @@
 // Landing. "Try the demo" is the primary action, so a first click shows the
 // verifier working; your own goal is the second path below it.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { UploadLink } from "./UploadLink";
 
 type Props = {
   onTryDemo: () => void;
   onCreate: (goal: string) => string | null;
   onImport: (markdown: string) => string | null;
+  onCheckReply: (request: string, reply: string) => string | null;
+  /** Text moved here from the plan box ("Is this an agent's reply?"). */
+  initialReply?: string;
   notice: string | null;
   onDismissNotice: () => void;
 };
 
-export function GoalInput({ onTryDemo, onCreate, onImport, notice, onDismissNotice }: Props) {
+export function GoalInput({ onTryDemo, onCreate, onImport, onCheckReply, initialReply, notice, onDismissNotice }: Props) {
   const [goal, setGoal] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState("");
   const [planError, setPlanError] = useState<string | null>(null);
+  const [request, setRequest] = useState("");
+  const [reply, setReply] = useState(initialReply ?? "");
+  const [replyError, setReplyError] = useState<string | null>(null);
+  const replySection = useRef<HTMLElement>(null);
 
-  async function loadFile(file: File | undefined) {
-    if (!file) return;
-    setPlan(await file.text());
-    setPlanError(null);
-  }
+  // Arriving from the plan box with a reply: show where it went.
+  useEffect(() => {
+    if (initialReply) replySection.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [initialReply]);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -97,6 +104,68 @@ export function GoalInput({ onTryDemo, onCreate, onImport, notice, onDismissNoti
         </form>
       </section>
 
+      <section ref={replySection} className="mt-10 border-t border-rule pt-8" aria-labelledby="reply-label">
+        <h2 id="reply-label" className="label">
+          Or check an agent&apos;s reply
+        </h2>
+        <p className="mt-1 text-sm text-muted">
+          What you asked for becomes the contract. The agent&apos;s reply is added as an agent claim: it can point you to
+          what to check, but it can&apos;t prove anything by itself.
+        </p>
+        <form
+          className="mt-3 space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setReplyError(onCheckReply(request, reply));
+          }}
+        >
+          <label className="block">
+            <span className="text-sm font-medium">What did you ask for?</span>
+            <textarea
+              id="reply-request"
+              value={request}
+              onChange={(e) => {
+                setRequest(e.target.value);
+                if (replyError) setReplyError(null);
+              }}
+              rows={2}
+              placeholder="e.g. Build a tip calculator that takes a bill amount and a tip percentage, shows the tip and the total, and rejects negative amounts"
+              className="mt-1 w-full rounded-xl border border-rule bg-sheet px-3 py-2 text-base focus:border-accent"
+            />
+          </label>
+          <label className="block">
+            <span className="text-sm font-medium">What did the agent reply?</span>
+            <textarea
+              id="reply-text"
+              value={reply}
+              onChange={(e) => {
+                setReply(e.target.value);
+                if (replyError) setReplyError(null);
+              }}
+              rows={5}
+              placeholder="Paste the agent's final message here."
+              className="mt-1 w-full rounded-xl border border-rule bg-sheet px-3 py-2 font-mono text-[13px] focus:border-accent"
+            />
+          </label>
+          <div className="flex flex-wrap items-start gap-4">
+            <button type="submit" className="btn btn-secondary px-4 py-2">
+              Check the reply
+            </button>
+            <UploadLink
+              onText={(t) => {
+                setReply(t);
+                setReplyError(null);
+              }}
+            />
+          </div>
+          {replyError && (
+            <p role="alert" className="text-sm text-contradicted">
+              {replyError}
+            </p>
+          )}
+        </form>
+      </section>
+
       <section className="mt-10 border-t border-rule pt-8" aria-labelledby="plan-label">
         <h2 id="plan-label" className="label">
           Or paste a plan (.md)
@@ -131,10 +200,12 @@ export function GoalInput({ onTryDemo, onCreate, onImport, notice, onDismissNoti
             <button type="submit" className="btn btn-secondary px-4 py-2">
               Find requirements
             </button>
-            <label className="cursor-pointer text-sm text-muted underline underline-offset-2 hover:text-ink">
-              or upload a .md file
-              <input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" className="sr-only" onChange={(e) => loadFile(e.target.files?.[0])} />
-            </label>
+            <UploadLink
+              onText={(t) => {
+                setPlan(t);
+                setPlanError(null);
+              }}
+            />
           </div>
           {planError && (
             <p role="alert" className="text-sm text-contradicted">

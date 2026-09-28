@@ -1,15 +1,16 @@
 // Proof Card: a Markdown proof checklist for a PR description or review comment.
 // spec.md > Proof Card Builder. It claims nothing beyond "verified by ProofPath
-// rules", and every item says where the evidence came from: the developer typed
-// it ("self-reported") or pasted an AI agent's message ("agent claim").
-// ProofPath never ran a test itself.
+// rules", and every prover is labeled "self-reported": the developer observed
+// it and typed it in. An agent's claim can never prove a requirement, so it
+// never appears as a prover. ProofPath never ran a test itself.
 
 import type { Evidence, Session } from "./types";
 import { coverage, supersededIds } from "./verify";
 import { hasCurrentVerdicts } from "./store";
 
 export function sourceLabel(e: Evidence): string {
-  return e.kind === "claim" ? "agent claim" : "self-reported";
+  if (e.kind === "claim") throw new Error(`${e.id} is an agent claim; claims never prove a requirement.`);
+  return "self-reported";
 }
 
 function summary(e: Evidence): string {

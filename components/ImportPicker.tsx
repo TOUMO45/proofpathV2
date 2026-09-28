@@ -6,16 +6,18 @@
 
 import { useMemo, useState } from "react";
 import { MAX_REQUIREMENTS } from "@/lib/contract/generate";
-import { canSelect, filterCandidates, importPlan, splitCandidate, toggleSelected } from "@/lib/import/plan";
+import { canSelect, filterCandidates, importPlan, looksLikeProse, splitCandidate, toggleSelected } from "@/lib/import/plan";
 
 type Props = {
   markdown: string;
   onUse: (goal: string, texts: string[]) => void;
   onManual: (goal: string) => void;
   onBack: () => void;
+  /** Move the text to "Check an agent's reply". */
+  onTreatAsReply: (text: string) => void;
 };
 
-export function ImportPicker({ markdown, onUse, onManual, onBack }: Props) {
+export function ImportPicker({ markdown, onUse, onManual, onBack, onTreatAsReply }: Props) {
   const [includePlain, setIncludePlain] = useState(false);
   const result = useMemo(() => importPlan(markdown, { includePlainBullets: includePlain }), [markdown, includePlain]);
   // Splits and selection belong to one result; switching the toggle starts over.
@@ -71,6 +73,19 @@ export function ImportPicker({ markdown, onUse, onManual, onBack }: Props) {
           </label>
         )}
       </div>
+
+      {looksLikeProse(markdown) && (
+        <div role="status" className="card border-accent p-4" data-testid="reply-redirect">
+          <p className="font-medium">No plan items found. Is this an agent&apos;s reply?</p>
+          <p className="mt-1 text-sm text-muted">
+            It reads like prose, not a checklist. Check it as an agent&apos;s reply instead: you&apos;ll add what you asked for,
+            and the reply becomes an agent claim.
+          </p>
+          <button type="button" onClick={() => onTreatAsReply(markdown)} className="btn btn-primary mt-3 px-4 py-2 text-sm">
+            Check it as an agent&apos;s reply
+          </button>
+        </div>
+      )}
 
       {candidates.length === 0 ? (
         <div role="status" className="card border-notproven p-4">

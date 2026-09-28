@@ -210,7 +210,7 @@ export function findWentThrough(observed: string): Signal[] {
 // What the observation must show for each expected outcome.
 const OUTCOME_SIGNALS: Record<ExpectedOutcome, RegExp> = {
   succeeds:
-    /\b(success(ful|fully)?|succeed(ed|s)?|submitted|sent|saved|completed?|thanks?|thank you|confirm(ed|ation)?|created|uploaded|200|201|204|ok|redirected|done in)\b/i,
+    /\b(success(ful|fully)?|succeed(ed|s)?|submitted|sent|saved|completed?|thanks?|thank you|confirm(ed|ation)?|created|uploaded|200|201|204|ok|redirected|done in|accepted|calculated|computed|converted|updated|processed)\b/i,
   rejects:
     /\b(reject(ed|s)?|block(ed|s)?|prevent(ed|s)?|invalid|validation|error|not (submitted|accepted|saved|sent)|disabled|denied|refused|4\d\d|warning|required)\b/i,
   displays: /\b(visible|show(s|n|ed)?|display(s|ed)?|appear(s|ed)?|render(s|ed)?|present|listed|see|saw|contains?)\b|["'][^"']{2,}["']/i,

@@ -29,6 +29,23 @@ export function evidenceFlags(e: Evidence): string[] {
 
 type Judged = { evidence: Evidence; stance: Stance };
 
+export const AGENT_CLAIM_NOTE = "Agent claim: a claim, not your observation. Verify it yourself";
+
+/**
+ * The stance that counts toward a verdict. An agent's claim is screened like
+ * any text: it can be untrusted, hypothetical, or contradict a requirement
+ * (it reported a failure). But it never supports one: with no human
+ * observation, it is only a claim.
+ */
+export function effectiveStance(req: Requirement, e: Evidence, linked: Requirement[]): Stance {
+  const s = stance(req, e, linked);
+  if (e.kind !== "claim") return s;
+  if (s.kind === "untrusted" || s.kind === "contradicts") return s;
+  // keep the screens' own findings; they say more than the generic note
+  if (s.kind === "neutral" && /^(hypothetical wording|vague approval)/.test(s.note)) return s;
+  return { kind: "neutral", note: AGENT_CLAIM_NOTE, quote: s.quote };
+}
+
 function cite(j: Judged): string {
   return `${j.evidence.id}: ${j.stance.note} — "${j.stance.quote}"`;
 }
@@ -56,7 +73,7 @@ export function verifyRequirement(req: Requirement, contract: Contract, evidence
 
   const judged: Judged[] = active.map((e) => ({
     evidence: e,
-    stance: stance(
+    stance: effectiveStance(
       req,
       e,
       contract.requirements.filter((r) => e.links.includes(r.id)),
@@ -118,7 +135,7 @@ function linkedReqs(contract: Contract, e: Evidence): Requirement[] {
 /** Active evidence that contradicts this requirement (for the "retest after a fix?" prompt). */
 export function contradictingIds(req: Requirement, contract: Contract, evidence: Evidence[]): string[] {
   return activeLinked(req, evidence)
-    .filter((e) => stance(req, e, linkedReqs(contract, e)).kind === "contradicts")
+    .filter((e) => effectiveStance(req, e, linkedReqs(contract, e)).kind === "contradicts")
     .map((e) => e.id);
 }
 
@@ -133,9 +150,9 @@ export function overLinks(req: Requirement, contract: Contract, evidence: Eviden
   for (const e of activeLinked(req, evidence)) {
     if (e.links.length < 2) continue;
     const reqs = linkedReqs(contract, e);
-    const here = stance(req, e, reqs);
+    const here = effectiveStance(req, e, reqs);
     if (here.kind !== "contradicts") continue;
-    const provesOther = reqs.some((r) => r.id !== req.id && stance(r, e, reqs).kind === "supports");
+    const provesOther = reqs.some((r) => r.id !== req.id && effectiveStance(r, e, reqs).kind === "supports");
     if (provesOther) out.push({ evidenceId: e.id, quote: here.quote });
   }
   return out;

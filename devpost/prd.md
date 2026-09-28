@@ -100,6 +100,21 @@ This is the last build slice. If time runs short, it moves to Later.
 - [ ] Pasted markdown with no bullet or checkbox items tells the developer that nothing was found, and falls back to manual entry.
 - [ ] Selecting an 8th candidate isn't possible.
 
+### Check an Agent's Reply
+Source: a real-agent test (tip calculator), where the natural move was to paste the agent's reply into "Paste a plan".
+
+The third Landing path, below "Check your own goal":
+- **What did you ask for?** The original request becomes the goal and generates the contract as usual.
+- **What did the agent reply?** The agent's final message, pasted as text (default), or uploaded as a `.md`/`.txt` file (optional, never required).
+- **Flow:** contract → Contract Review, which shows the reply as "added on approval" → Approve → the reply is added automatically as **E1**, an Agent claim linked to every requirement → Verify runs once.
+- **Uploads** (here, in "Paste a plan" and in the Workspace's Agent claim tab): read locally in the browser (FileReader), `.md`/`.txt` only, 200 KB max, with a clear message otherwise. The text goes through the same normalization and screens as pasted text. Nothing is sent anywhere.
+- **Wrong box:** if "Paste a plan" finds no checkbox items and the text reads like prose, it shows "No plan items found. Is this an agent's reply?" with a button that moves the text to this path.
+
+- [ ] Request + pasted reply → contract → Approve → E1 agent claim linked to every requirement → verdicts shown without pressing Verify.
+- [ ] A `.md` reply upload gives the same result as pasting it.
+- [ ] A non-`.md`/`.txt` or over-200 KB file is rejected with a clear message.
+- [ ] Prose pasted into "Paste a plan" offers the redirect.
+
 ### Contract Review
 Source: `scope.md > The Core Loop`.
 
@@ -125,7 +140,7 @@ Source: `scope.md > What "Working" Looks Like` (item 3).
 There are three kinds of evidence:
 - **Text:** a free-form observation.
 - **Structured test:** three fields, **Input / Action / Observed**.
-- **Agent claim:** an AI agent's own "done" message, pasted as-is. The verifier treats it exactly like text (no special rules), so the hypothetical, vague and injection screens do the work. The UI labels it **AGENT CLAIM**, so the viewer sees it's the agent talking, not an observation.
+- **Agent claim:** an AI agent's own "done" message, pasted as-is or uploaded as a `.md`/`.txt` file. It is screened like text (hypothetical, vague, injection, obfuscation), but **an agent claim can never make a requirement PROVEN on its own**. With no human observation, the verdict is NOT PROVEN, with the reason "Agent claim: a claim, not your observation. Verify it yourself." A claim that reports a failure still contradicts. The UI labels it **AGENT CLAIM**. (Learner decision after a real-agent test: the agent wrote concrete past-tense claims, "Verified: 125.00 @ 18% → tip $22.50", that the old rules would have accepted as proof.)
 
 Each item gets an ID (E1, E2, …).
 - **Linking:** one item can link to several requirements, because real observations often cover several things. The developer always sets links explicitly; ProofPath never links automatically.
@@ -138,6 +153,8 @@ Each item gets an ID (E1, E2, …).
 
 - [ ] Evidence linked to no requirement can't be added.
 - [ ] Pasting "I've implemented validation that should reject invalid emails. The form will now show a confirmation." as an agent claim linked to R2 and R4 gives both NOT PROVEN, with reasons naming "should" and "will".
+- [ ] Concrete wording that proves a requirement as the developer's text is NOT PROVEN as an agent claim, with "Agent claim: a claim, not your observation. Verify it yourself."
+- [ ] An agent claim that reports a failure still contradicts.
 - [ ] One evidence item can be linked to two requirements and appears under both in the Proof Graph.
 - [ ] "Supersedes" only offers evidence that shares at least one linked requirement with the new item.
 - [ ] A superseded item stays visible, struck through, and contributes nothing to any verdict.
@@ -189,7 +206,7 @@ Source: `scope.md > The Core Loop`.
 ### Proof Gap
 Source: `scope.md > What "Working" Looks Like` (item 6).
 
-Each requirement that isn't PROVEN shows a Proof Gap card with a concrete next test: what to do and what to observe.
+Each requirement that isn't PROVEN shows a Proof Gap card with a concrete next test: what to do and what to observe. Its wording is direct ("Open the screen with it…", "Verify that…"); the tool never uses the modal words its own verifier rejects. If an agent claim is linked, its concrete claims (numbers, quoted strings, input→output pairs) are listed, each under the requirement it matches best: "The agent claims: 125.00 @ 18% → tip $22.50, total $147.50. Check it."
 
 - [ ] Every NOT PROVEN or CONTRADICTED requirement has a Proof Gap card, and PROVEN requirements have none.
 - [ ] Each card names a concrete action and the observation that would prove the requirement.
@@ -205,7 +222,7 @@ The Proof Card is shown on screen when coverage reaches 100%. It contains:
 - any superseded items, e.g. "E3 (500 error on submit) superseded by E4 retest", so a past failure is never hidden
 - next to each proving evidence ID, where it came from: "self-reported" (typed by the developer) or "agent claim", so the card never implies ProofPath tested anything itself
 
-It says "verified by ProofPath rules" and nothing more. It isn't a certificate and makes no security claim.
+It says "verified by ProofPath rules" and nothing more. It isn't a certificate and makes no security claim. Every prover is labeled "self-reported"; an agent claim can never appear as a prover.
 
 - **Main action:** **Copy as Markdown**, to paste into a PR description or review comment as a proof checklist.
 - **Secondary action:** **Download .md**, with the same content.

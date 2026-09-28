@@ -37,6 +37,11 @@ const MUTATIONS: Mutation[] = [
     edits: [["if (contradicts.length > 0) {", "if (contradicts.length > 0 && supports.length === 0) {"]],
   },
   {
+    rule: "Agent claims never prove on their own",
+    file: "lib/verify/index.ts",
+    edits: [['  if (e.kind !== "claim") return s;', "  return s;"]],
+  },
+  {
     rule: "Text normalization (invisible chars, lookalikes, fullwidth)",
     file: "lib/text.ts",
     edits: [

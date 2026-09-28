@@ -8,6 +8,7 @@
 import { useState } from "react";
 import type { RecordPrefill } from "@/lib/gap";
 import { demoSampleFor, missingLinkHints, retestPrompts } from "@/lib/hints";
+import { UploadLink } from "./UploadLink";
 import type { EvidenceDraft } from "@/lib/store";
 import { supersedableEvidence, validateDraft } from "@/lib/store";
 import type { EvidenceKind, Session } from "@/lib/types";
@@ -126,6 +127,7 @@ export function EvidenceForm({ session, onAdd, prefill }: Props) {
           )}
         </div>
       ) : (
+        <div>
         <label className="block">
           <span className="label text-xs">{kind === "claim" ? "Agent's message" : "Observation"}</span>
           <textarea
@@ -139,6 +141,12 @@ export function EvidenceForm({ session, onAdd, prefill }: Props) {
             }
           />
         </label>
+        {kind === "claim" && (
+          <span className="mt-1 block">
+            <UploadLink onText={setText} />
+          </span>
+        )}
+        </div>
       )}
 
       <fieldset>

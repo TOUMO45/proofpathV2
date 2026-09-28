@@ -14,7 +14,7 @@ describe("proof gaps", () => {
     for (const g of buildGaps(demoContract, verify(demoContract, demoEvidence))) {
       expect(g.action.length).toBeGreaterThan(10);
       expect(g.observe).toContain("`Observed:`");
-      expect(g.statement).toMatch(/^I will verify that /);
+      expect(g.statement).toMatch(/^Verify that /);
       expect(g.why.length).toBeGreaterThan(0);
     }
   });

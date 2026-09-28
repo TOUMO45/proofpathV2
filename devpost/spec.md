@@ -142,7 +142,7 @@ PRD ref: `prd.md > Verification`.
 For each requirement that isn't PROVEN, it builds a Proof Gap from the requirement's template:
 - **Action:** what to do.
 - **Observe:** what you'd see.
-- **"I will verify that …"**
+- **"Verify that …"** (direct wording: the tool never uses the modal words its verifier rejects)
 - **Why it's open:** the verdict's reason.
 
 PRD ref: `prd.md > Proof Gap`.
@@ -180,6 +180,15 @@ PRD ref: `prd.md > States and Boundaries`, `prd.md > Evidence`, `prd.md > Contra
 - **`verify > overLinks`** finds multi-linked evidence that supports another linked requirement and contradicts this one. It's appended to the CONTRADICTED reason as "… Is this link intended?". The store action `unlinkEvidence` removes one link and never the last one.
 
 PRD ref: `prd.md > Guidance While Recording Evidence`.
+
+### Agent Replies (`lib/upload.ts`, `lib/claims.ts`, `verify > effectiveStance`)
+- **`effectiveStance`** (in `lib/verify/index.ts`): a `claim` keeps the untrusted and contradicts stances and the hypothetical/vague screen reasons. Anything else, including what would have been support, becomes neutral with `AGENT_CLAIM_NOTE`. Verdicts, `overLinks` and `contradictingIds` all use it.
+- **`claimFacts`**: sentences with numbers, quoted strings or arrows, with any leading "Verified:" label dropped. `gap.ts > claimsFor` assigns each to the linked requirement(s) whose target words it matches best.
+- **`checkUpload` / `readTextFile`**: `.md`/`.markdown`/`.txt`, a text MIME type or none, 200 KB max, read with FileReader. Used by `components/UploadLink.tsx` everywhere a paste box accepts a file.
+- **`Session.pendingClaim`**: set by `createContract` from "Check an agent's reply". `approveContract` turns it into E1 (a claim linked to all requirements) and runs `verify` once.
+- **`looksLikeProse`** (`lib/import/plan.ts`): no checkbox items, at least 12 words and a sentence end. It triggers the "Is this an agent's reply?" redirect.
+
+PRD ref: `prd.md > Check an Agent's Reply`, `prd.md > Evidence`.
 
 ### UI Components (`components/`)
 - **`GoalInput`:** Landing, with the goal textarea and the "Paste a plan" tab.
@@ -221,7 +230,7 @@ type Requirement = {
 
 type Evidence = {
   id: string;            // E1, E2…, never reused
-  kind: 'text' | 'structured' | 'claim'; // claim = an agent's pasted message, judged exactly like text
+  kind: 'text' | 'structured' | 'claim'; // claim = an agent's message: screened like text, never proves on its own
   text?: string;
   structured?: { input: string; action: string; observed: string };
   links: string[];       // requirement IDs, at least 1, always set explicitly
@@ -245,6 +254,7 @@ type Session = {
   isDemo: boolean;
   nextEvidenceNumber: number;
   removedRequirements: { id: string; text: string; lastVerdict: VerdictStatus; removedEvidence: string[] }[]; // audit trail
+  pendingClaim?: string; // "Check an agent's reply": becomes E1 on approval
 };
 ```
 

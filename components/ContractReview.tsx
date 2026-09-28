@@ -59,6 +59,21 @@ export function ContractReview({ session, dispatch }: { session: Session; dispat
           </p>
         </section>
 
+        {session.pendingClaim && (
+          <section className="card p-4" aria-labelledby="pending-reply-label" data-testid="pending-reply">
+            <h2 id="pending-reply-label" className="label">
+              Agent&apos;s reply · added on approval
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              When you approve, the reply becomes E1: an agent claim linked to every requirement, and Verify runs once.
+              A claim can&apos;t prove anything by itself; its concrete claims show up in the Proof Gaps for you to check.
+            </p>
+            <pre className="mt-3 max-h-40 overflow-auto rounded-xl border border-rule bg-paper p-3 font-mono text-[12.5px] whitespace-pre-wrap">
+              {session.pendingClaim}
+            </pre>
+          </section>
+        )}
+
         {reqs.length < 3 && (
           <p role="status" className="rounded-xl border border-notproven bg-sheet p-3 text-sm">
             <span className="font-mono font-semibold text-notproven">LOW CONFIDENCE</span> Only {reqs.length} requirement

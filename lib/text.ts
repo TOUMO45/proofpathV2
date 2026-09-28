@@ -163,7 +163,7 @@ export function quoteBest(text: string, targets: string[]): string {
       bestScore = score;
     }
   }
-  let q = stripWrappingQuotes(best.replace(/[.;,]+$/, ""));
+  let q = stripWrappingQuotes(best.replace(/^[-*+]\s+/, "").replace(/[.;,]+$/, ""));
   if (q.length > 160) q = q.slice(0, 157).trimEnd() + "…";
   return q;
 }

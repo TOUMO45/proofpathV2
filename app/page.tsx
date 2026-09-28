@@ -33,6 +33,7 @@ export default function Home() {
   // counter remounts the form so each click starts from a fresh pre-fill.
   const [record, setRecord] = useState<{ prefill: RecordPrefill; n: number } | null>(null);
   const [imported, setImported] = useState<string | null>(null); // pasted plan markdown
+  const [replyDraft, setReplyDraft] = useState<string | undefined>(undefined); // plan-box text moved to "Check an agent's reply"
   useEffect(() => {
     const { session, notice } = loadSaved(browserStorage());
     dispatch({ type: "hydrate", session, notice });
@@ -50,6 +51,10 @@ export default function Home() {
       <ImportPicker
         markdown={imported}
         onBack={() => setImported(null)}
+        onTreatAsReply={(text) => {
+          setReplyDraft(text);
+          setImported(null);
+        }}
         onUse={(goal, texts) => {
           const requirements = texts.map((t, i) => makeRequirement(`R${i + 1}`, t));
           setImported(null);
@@ -71,6 +76,16 @@ export default function Home() {
           const result = generateContract(goal);
           if (!result.ok) return result.error;
           dispatch({ type: "createContract", goal: goal.trim(), requirements: result.requirements });
+          return null;
+        }}
+        initialReply={replyDraft}
+        key={replyDraft ? "with-reply" : "landing"}
+        onCheckReply={(request, reply) => {
+          if (!reply.trim()) return "Paste the agent's reply, or upload it as a .md / .txt file.";
+          const result = generateContract(request);
+          if (!result.ok) return result.error;
+          setReplyDraft(undefined);
+          dispatch({ type: "createContract", goal: request.trim(), requirements: result.requirements, pendingClaim: reply });
           return null;
         }}
         onImport={(markdown) => {

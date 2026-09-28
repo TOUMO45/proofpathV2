@@ -34,7 +34,7 @@ const OUTCOME_WORDS: Record<ExpectedOutcome, string[]> = {
 };
 
 function clip(sentence: string): string {
-  let q = stripWrappingQuotes(sentence.replace(/[.;,]+$/, ""));
+  let q = stripWrappingQuotes(sentence.replace(/^[-*+]\s+/, "").replace(/[.;,]+$/, ""));
   if (q.length > 160) q = q.slice(0, 157).trimEnd() + "…";
   return q;
 }
@@ -91,10 +91,18 @@ export function stance(req: Requirement, evidence: Evidence, linked: Requirement
 
   // 4. Contradiction.
   const isTarget = (w: string) => req.targets.some((t) => wordsMatch(w, t));
+  // Which linked requirement(s) a sentence is about: the one(s) whose target
+  // words it matches best. "Negative amounts are rejected" is about "rejects
+  // negative amounts" (3 matches), not "takes a bill amount" (1 match).
+  const bestMatches = (text: string): Requirement[] => {
+    const scored = linked.map((r) => ({ r, n: matchedTargets(text, r.targets).length }));
+    const top = Math.max(0, ...scored.map((s) => s.n));
+    return top === 0 ? [] : scored.filter((s) => s.n === top).map((s) => s.r);
+  };
   const aboutThisRequirement = (sentence: string): boolean => {
-    const bySentence = linked.filter((r) => matchedTargets(sentence, r.targets).length > 0);
+    const bySentence = bestMatches(sentence);
     if (bySentence.length > 0) return bySentence.some((r) => r.id === req.id);
-    const bySetup = linked.filter((r) => matchedTargets(parsed.setup, r.targets).length > 0);
+    const bySetup = bestMatches(parsed.setup);
     if (bySetup.length > 0) return bySetup.some((r) => r.id === req.id);
     return true; // nothing says which requirement it's about: it counts against all of them
   };

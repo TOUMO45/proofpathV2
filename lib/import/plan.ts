@@ -90,6 +90,17 @@ export function importPlan(markdown: string, options: ImportOptions = {}): Impor
   return { title: title || "Imported plan", candidates, skippedPlainBullets };
 }
 
+/**
+ * Text with no checkbox items that reads like prose: probably an agent's reply
+ * pasted into the plan box (replies often have plain bullets, so those don't
+ * rule it out). At least 12 words and at least one sentence end.
+ */
+export function looksLikeProse(markdown: string): boolean {
+  if (importPlan(markdown).candidates.length > 0) return false;
+  const words = tokenize(markdown).length;
+  return words >= 12 && /[a-z][.!?](\s|$)/i.test(markdown);
+}
+
 /** Case-insensitive filter on the item text or the heading it came from. */
 export function filterCandidates(candidates: Candidate[], query: string): Candidate[] {
   const q = query.trim().toLowerCase();

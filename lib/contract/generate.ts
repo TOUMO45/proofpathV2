@@ -33,9 +33,17 @@ function theNP(np: string): string {
   return `The ${withoutArticle(np)}`;
 }
 
-function thirdPerson(verb: string): string {
+/**
+ * Third-person form for "The app ___": "show" → "shows", "fix" → "fixes",
+ * "copy" → "copies". A verb that is already inflected ("shows", "rejects",
+ * "passes", "fixes") is kept as is; a base form ending in "ss" ("pass") still
+ * gets "es". (A real-agent test once produced "showses" and "rejectses".)
+ */
+export function thirdPerson(verb: string): string {
   const v = verb.toLowerCase();
-  if (/(s|sh|ch|x|z)$/.test(v)) return `${v}es`;
+  if (/(ss|sh|ch|x|z)es$/.test(v) || /ies$/.test(v)) return v; // passes, fixes, copies
+  if (/[^s]s$/.test(v)) return v; // shows, rejects, displays, saves
+  if (/(s|sh|ch|x|z)$/.test(v)) return `${v}es`; // pass → passes, fix → fixes
   if (/[^aeiou]y$/.test(v)) return `${v.slice(0, -1)}ies`;
   return `${v}s`;
 }
@@ -104,7 +112,7 @@ export function proofTemplateFor(text: string, expected: ExpectedOutcome): strin
   const claim = text.charAt(0).toLowerCase() + text.slice(1);
   switch (expected) {
     case "displays":
-      return `Open the screen where it should appear and check that ${claim}. Quote what you see.`;
+      return `Open the screen with it and check that ${claim}. Quote what you see.`;
     case "rejects":
       return `Try it with the input that must be refused and check that ${claim}. Record the message you get and that nothing went through.`;
     case "persists":

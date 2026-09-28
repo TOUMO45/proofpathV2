@@ -79,5 +79,8 @@ export const SessionSchema = z.object({
   isDemo: z.boolean(),
   nextEvidenceNumber: z.number().int().min(1),
   removedRequirements: z.array(RemovedRequirementSchema).default([]),
+  // "Check an agent's reply": the reply waits here until the contract is
+  // approved, then becomes E1 (an agent claim linked to every requirement).
+  pendingClaim: z.string().optional(),
 });
 export type Session = z.infer<typeof SessionSchema>;

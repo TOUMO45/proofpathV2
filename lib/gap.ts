@@ -1,7 +1,10 @@
 // Proof Gap builder: for every requirement that isn't PROVEN, the smallest
 // concrete test to run next. spec.md > Gap Builder (lib/gap).
 
-import type { Contract, ExpectedOutcome, Session, Verdict } from "./types";
+import { claimFacts } from "./claims";
+import { matchedTargets } from "./text";
+import type { Contract, Evidence, ExpectedOutcome, Requirement, Session, Verdict } from "./types";
+import { supersededIds } from "./verify";
 
 export type ProofGap = {
   requirementId: string;
@@ -17,6 +20,8 @@ export type ProofGap = {
   why: string;
   /** For a contradiction: the evidence a passing retest should supersede. */
   retestOf: string[];
+  /** Concrete claims from linked agent messages: "The agent claims: … Check it." */
+  agentClaims: string[];
 };
 
 const OBSERVE: Record<ExpectedOutcome, string> = {
@@ -58,8 +63,26 @@ export function recordPrefill(gap: ProofGap, session: Session): RecordPrefill {
   };
 }
 
-export function buildGaps(contract: Contract, verdicts: Verdict[]): ProofGap[] {
+/**
+ * The concrete claims in an agent's message that belong to this requirement:
+ * each claim goes to the linked requirement(s) whose target words it matches
+ * best, so "Negative amounts are rejected" lands on the rejects requirement,
+ * not on every requirement that mentions an amount.
+ */
+function claimsFor(req: Requirement, e: Evidence, contract: Contract): string[] {
+  const linked = contract.requirements.filter((r) => e.links.includes(r.id));
+  const all = claimFacts(e.text ?? "", [], { fallbackToAll: true, max: 50 });
+  return all.filter((fact) => {
+    const scores = linked.map((r) => ({ id: r.id, n: matchedTargets(fact, r.targets).length }));
+    const top = Math.max(0, ...scores.map((s) => s.n));
+    if (top === 0) return linked.length === 1; // about nothing specific: only if the message is about this one requirement
+    return scores.some((s) => s.id === req.id && s.n === top);
+  });
+}
+
+export function buildGaps(contract: Contract, verdicts: Verdict[], evidence: Evidence[] = []): ProofGap[] {
   const gaps: ProofGap[] = [];
+  const superseded = supersededIds(evidence);
   for (const req of contract.requirements) {
     const verdict = verdicts.find((v) => v.requirementId === req.id);
     if (!verdict || verdict.status === "PROVEN") continue;
@@ -72,9 +95,16 @@ export function buildGaps(contract: Contract, verdicts: Verdict[]): ProofGap[] {
         verdict.status === "CONTRADICTED"
           ? `Fix what the evidence shows first. Then run the test again and add it as a retest marked "Supersedes" the failing evidence. ${OBSERVE[req.expected]}`
           : OBSERVE[req.expected],
-      statement: `I will verify that ${lowerFirst(req.text.replace(/[.\s]+$/, ""))}.`,
+      statement: `Verify that ${lowerFirst(req.text.replace(/[.\s]+$/, ""))}.`,
       why: verdict.reason,
       retestOf: verdict.status === "CONTRADICTED" ? verdict.evidenceIds : [],
+      agentClaims: [
+        ...new Set(
+          evidence
+            .filter((e) => e.kind === "claim" && e.links.includes(req.id) && !superseded.has(e.id))
+            .flatMap((e) => claimsFor(req, e, contract)),
+        ),
+      ].slice(0, 3),
     });
   }
   return gaps;
@@ -87,5 +117,5 @@ export function buildGaps(contract: Contract, verdicts: Verdict[]): ProofGap[] {
  */
 export function gapsForDisplay(session: Session): { gaps: ProofGap[]; stale: boolean } {
   if (session.verdicts.length === 0) return { gaps: [], stale: false };
-  return { gaps: buildGaps(session.contract, session.verdicts), stale: session.stale };
+  return { gaps: buildGaps(session.contract, session.verdicts, session.evidence), stale: session.stale };
 }

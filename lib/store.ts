@@ -68,7 +68,7 @@ export type Action =
   | { type: "addEvidence"; draft: EvidenceDraft }
   | { type: "removeEvidence"; id: string }
   | { type: "unlinkEvidence"; evidenceId: string; requirementId: string }
-  | { type: "createContract"; goal: string; requirements: Requirement[] }
+  | { type: "createContract"; goal: string; requirements: Requirement[]; pendingClaim?: string }
   | { type: "editRequirement"; id: string; patch: RequirementPatch }
   | { type: "addRequirement" }
   | { type: "removeRequirement"; id: string }
@@ -146,6 +146,7 @@ export function reducer(state: State, action: Action): State {
           isDemo: false,
           nextEvidenceNumber: 1,
           removedRequirements: [],
+          ...(action.pendingClaim?.trim() ? { pendingClaim: action.pendingClaim } : {}),
         },
       };
     case "editRequirement":
@@ -212,7 +213,16 @@ export function reducer(state: State, action: Action): State {
     case "approveContract": {
       const s = state.session;
       if (!s || s.contract.approved || approvalBlocker(s)) return state;
-      return { ...state, session: { ...s, contract: { ...s.contract, approved: true }, stale: true } };
+      const approved: Session = { ...s, contract: { ...s.contract, approved: true }, stale: true };
+      if (!approved.pendingClaim) return { ...state, session: approved };
+      // The agent's reply becomes E1: an agent claim linked to every
+      // requirement. Then Verify runs once, so the first screen shows verdicts.
+      const { pendingClaim, ...rest } = approved;
+      const withClaim = reducer(
+        { ...state, session: rest },
+        { type: "addEvidence", draft: { kind: "claim", text: pendingClaim, links: rest.contract.requirements.map((r) => r.id) } },
+      );
+      return reducer(withClaim, { type: "verify" });
     }
     case "reopenContract": {
       const s = state.session;

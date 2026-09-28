@@ -33,6 +33,20 @@ export function ProofGapCard({ gap, onRecord, stale = false }: { gap: ProofGap; 
         </dd>
         <dt className="label text-xs">Claim</dt>
         <dd className="font-mono text-[0.9em]">{gap.statement}</dd>
+        {gap.agentClaims.length > 0 && (
+          <>
+            <dt className="label text-xs">Agent claims</dt>
+            <dd>
+              <ul className="space-y-1">
+                {gap.agentClaims.map((c) => (
+                  <li key={c}>
+                    The agent claims: <span className="font-mono text-[0.9em]">{c}</span>. Check it.
+                  </li>
+                ))}
+              </ul>
+            </dd>
+          </>
+        )}
         <dt className="label text-xs">Why open</dt>
         <dd className="text-muted">
           <RichText text={gap.why} />
