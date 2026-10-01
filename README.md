@@ -8,6 +8,12 @@ The verifier is deterministic on purpose. It has no chat, no confidence score an
 
 **Live demo:** https://toumo45.github.io/proofpathV2/ (runs entirely in the browser: no account, no API key, nothing sent anywhere)
 
+## Demo video
+
+[![Watch the demo: "My AI agent said 'Verified'. ProofPath gave it 0%."](https://img.youtube.com/vi/KdBEr_QyG1I/maxresdefault.jpg)](https://www.youtube.com/watch?v=KdBEr_QyG1I)
+
+▶ [Watch the demo on YouTube](https://www.youtube.com/watch?v=KdBEr_QyG1I): an AI agent says "Verified", ProofPath gives it 0%, and the Proof Gaps show what to test next.
+
 ## How to judge it in 60 seconds
 
 1. Open the live demo and press **Try the demo**, then **Verify**. An AI agent claimed a contact form was done. Coverage is **25%**: one real test proves R1, a bluff ("would be blocked") is NOT PROVEN, and a 500 error is CONTRADICTED.
